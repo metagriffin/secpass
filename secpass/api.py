@@ -13,7 +13,6 @@ class IntegrityError(Exception): pass
 
 #------------------------------------------------------------------------------
 DEFAULT_CONFIG          = '~/.config/secpass/config.ini'
-DEFAULT_SECTION         = 'default'
 DEFAULT_DRIVER          = 'file'
 
 #------------------------------------------------------------------------------
@@ -29,6 +28,8 @@ class Entry(object):
 
   PROFILE_ITEMS = ('service', 'role', 'password', 'notes')
 
+  # TODO: move `created`, `updated` and `lastused` to here...
+
   #----------------------------------------------------------------------------
   def __init__(self,
                id=None, seq=0,
@@ -41,6 +42,10 @@ class Entry(object):
     self.role     = role or None
     self.password = password or None
     self.notes    = notes or None
+
+  #----------------------------------------------------------------------------
+  def asdict(self):
+    return dict(self.__dict__)
 
   #----------------------------------------------------------------------------
   def __repr__(self):
