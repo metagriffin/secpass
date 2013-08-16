@@ -14,7 +14,7 @@ from contextlib import contextmanager
 import gnupg
 from . import file
 from .file import FileDriver
-from spm.util import adict
+from secpass.util import adict
 
 #------------------------------------------------------------------------------
 DEFAULT_PATH = file.DEFAULT_PATH + '.gpg'

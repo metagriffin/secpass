@@ -12,7 +12,7 @@ class EntryNotFound(Exception): pass
 class IntegrityError(Exception): pass
 
 #------------------------------------------------------------------------------
-DEFAULT_CONFIG          = '~/.config/spm/config.ini'
+DEFAULT_CONFIG          = '~/.config/secpass/config.ini'
 DEFAULT_SECTION         = 'default'
 DEFAULT_DRIVER          = 'file'
 
@@ -44,7 +44,7 @@ class Entry(object):
 
   #----------------------------------------------------------------------------
   def __repr__(self):
-    return '<spm.Entry %r>' % ({
+    return '<secpass.Entry %r>' % ({
       k: v for k, v in self.__dict__.items() if k != 'password'})
 
 #------------------------------------------------------------------------------

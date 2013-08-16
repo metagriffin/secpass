@@ -31,13 +31,13 @@ requires = [
 
 entrypoints = {
   'console_scripts': [
-    'spm                = spm.cli:main',
-    'spm-gui            = spm.gui:main',
+    'secpass            = secpass.cli:main',
+    'secpass-gui        = secpass.gui:main',
     ],
   }
 
 setup(
-  name                  = 'spm',
+  name                  = 'secpass',
   version               = '0.1.0',
   description           = 'Secure Password Manager',
   long_description      = README,
@@ -54,15 +54,15 @@ setup(
     ],
   author                = 'metagriffin',
   author_email          = 'metagriffin@uberdev.org',
-  url                   = 'http://github.com/metagriffin/spm',
+  url                   = 'http://github.com/metagriffin/secpass',
   keywords              = 'secure password manager',
   packages              = find_packages(),
-  namespace_packages    = ['spm.driver'],
+  namespace_packages    = ['secpass', 'secpass.driver'],
   include_package_data  = True,
-  zip_safe              = True,
+  zip_safe              = False,
   install_requires      = requires,
   tests_require         = test_requires,
-  test_suite            = 'spm',
+  test_suite            = 'secpass',
   entry_points          = entrypoints,
   license               = 'MIT (http://opensource.org/licenses/MIT)',
   )

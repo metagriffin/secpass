@@ -11,10 +11,10 @@ from StringIO import StringIO
 from contextlib import contextmanager
 from . import stream
 from .stream import AbstractStreamDriver
-from spm.util import adict
+from secpass.util import adict
 
 #------------------------------------------------------------------------------
-DEFAULT_PATH = '~/.config/spm/data.csv'
+DEFAULT_PATH = '~/.config/secpass/data.csv'
 
 #------------------------------------------------------------------------------
 class FileDriver(AbstractStreamDriver):

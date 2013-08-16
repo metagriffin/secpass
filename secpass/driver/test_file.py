@@ -8,13 +8,13 @@
 
 import unittest, tempfile, os, csv, shutil
 from StringIO import StringIO
-from spm import api
-from spm.util import adict
-from spm.driver import file
-from spm.test_helpers import TestSpmHelper
+from secpass import api
+from secpass.util import adict
+from secpass.driver import file
+from secpass.test_helpers import TestSecPassHelper
 
 #------------------------------------------------------------------------------
-class TestFileDriver(TestSpmHelper):
+class TestFileDriver(TestSecPassHelper):
 
   #----------------------------------------------------------------------------
   def test_file(self):
@@ -43,7 +43,7 @@ class TestFileDriver(TestSpmHelper):
 :UUID:$ID2,0,:~NOW,:~NOW,:~NOW,:NULL,"testservice2","testrole2","testpass2","testnotes2"
 :=ID1,3,:=CTS1,:~NOW,:~NOW,:~NOW,"testservice","testrole","newpass","testnotes"
 '''
-    self.assertSpmCsvEqual(open(path, 'rb').read(), chk)
+    self.assertSecPassCsvEqual(open(path, 'rb').read(), chk)
     shutil.rmtree(tdir)
 
 #------------------------------------------------------------------------------

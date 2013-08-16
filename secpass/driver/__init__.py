@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #------------------------------------------------------------------------------
 # file: $Id$
-# lib:  spm.driver
+# lib:  secpass.driver
 # auth: metagriffin <metagriffin@uberdev.org>
 # date: 2013/04/27
 # copy: (C) CopyLoose 2013 UberDev <hardcore@uberdev.org>, No Rights Reserved.

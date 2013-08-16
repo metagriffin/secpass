@@ -10,9 +10,9 @@
 #       (to limit file size blow-up)
 
 import time, uuid, csv, re, copy
-from spm import api
-from spm.driver import base
-from spm.util import glob2re
+from secpass import api
+from secpass.driver import base
+from secpass.util import glob2re
 
 #------------------------------------------------------------------------------
 class StreamEntry(api.Entry):

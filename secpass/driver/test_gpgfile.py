@@ -9,12 +9,12 @@
 import unittest, tempfile, os, csv, shutil
 from StringIO import StringIO
 import gnupg
-from spm import api
-from spm.driver import gpgfile
-from spm.test_helpers import TestSpmHelper
+from secpass import api
+from secpass.driver import gpgfile
+from secpass.test_helpers import TestSecPassHelper
 
 #------------------------------------------------------------------------------
-class TestGpgDriver(TestSpmHelper):
+class TestGpgDriver(TestSecPassHelper):
 
   #----------------------------------------------------------------------------
   def setUp(self):
@@ -52,7 +52,7 @@ class TestGpgDriver(TestSpmHelper):
 # '''
 #     with open(path, 'rb') as fp:
 #       gpg  = gnupg.GPG(use_agent=self.gpgargs['agent'])
-#       self.assertSpmCsvEqual(str(gpg.decrypt(fp.read())), chk)
+#       self.assertSecPassCsvEqual(str(gpg.decrypt(fp.read())), chk)
 #     shutil.rmtree(tdir)
 
 #------------------------------------------------------------------------------

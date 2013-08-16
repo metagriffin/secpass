@@ -10,7 +10,7 @@ import unittest, csv, time, urllib
 from StringIO import StringIO
 
 #------------------------------------------------------------------------------
-class TestSpmHelper(unittest.TestCase):
+class TestSecPassHelper(unittest.TestCase):
 
   #----------------------------------------------------------------------------
   def assertIsUuid(self, text):
@@ -23,7 +23,7 @@ class TestSpmHelper(unittest.TestCase):
       msg='%r is near %r' % (test, check))
 
   #----------------------------------------------------------------------------
-  def assertSpmCsvEqual(self, test, check):
+  def assertSecPassCsvEqual(self, test, check):
     out = list(csv.reader(StringIO(test)))
     chk = list(csv.reader(StringIO(check)))
     self.assertEqual(len(out), len(chk))

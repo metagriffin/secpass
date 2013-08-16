@@ -15,7 +15,7 @@ from .util import adict, zulu, localtime, resolvePath, asbool, resolve
 DEFAULT_SHOW_MAX    = 3
 DEFAULT_CONFIG_DATA = '''\
 [default]
-driver                  = spm.driver.file.FileDriver
+driver                  = secpass.driver.file.FileDriver
 driver.path             = data.csv
 '''
 
@@ -323,7 +323,7 @@ class AliasedSubParsersAction(argparse._SubParsersAction):
 #------------------------------------------------------------------------------
 def main(argv=None):
 
-  defconf = os.environ.get('SPM_CONFIG', api.DEFAULT_CONFIG)
+  defconf = os.environ.get('SECPASS_CONFIG', api.DEFAULT_CONFIG)
 
   cli = argparse.ArgumentParser(
     #usage      = '%(prog)s [-h|--help] [OPTIONS] COMMAND [CMD-OPTIONS] ...',
@@ -331,10 +331,10 @@ def main(argv=None):
     epilog      = '''
       Whenever a PASSWORD option is accepted, you can specify either
       the literal password, "-", or nothing at all. The literal "-"
-      will cause spm to prompt for the password, which is much more
-      secure than providing the password on the command line (and is
-      therefore the recommended approach). If not specified or empty,
-      it will be auto-generated (and displayed).
+      will cause secpass to prompt for the password, which is much
+      more secure than providing the password on the command line (and
+      is therefore the recommended approach). If not specified or
+      empty, it will be auto-generated (and displayed).
       '''
     )
 

@@ -9,9 +9,9 @@
 import unittest, csv, time
 from StringIO import StringIO
 from contextlib import contextmanager
-from spm import api
-from spm.driver import stream
-from spm.test_helpers import TestSpmHelper
+from secpass import api
+from secpass.driver import stream
+from secpass.test_helpers import TestSecPassHelper
 
 #------------------------------------------------------------------------------
 class BufferDriver(stream.AbstractStreamDriver):
@@ -27,7 +27,7 @@ class BufferDriver(stream.AbstractStreamDriver):
     yield StringIO(self.value)
 
 #------------------------------------------------------------------------------
-class TestAbstractStreamDriver(TestSpmHelper):
+class TestAbstractStreamDriver(TestSecPassHelper):
 
   #----------------------------------------------------------------------------
   def test_create(self):
@@ -38,7 +38,7 @@ class TestAbstractStreamDriver(TestSpmHelper):
 "id","seq","created","updated","lastused","deleted","service","role","password","notes"
 :UUID,0,:~NOW,:~NOW,:~NOW,,"testservice","testrole","testpass","testnotes"
 '''
-    self.assertSpmCsvEqual(driver.value, chk)
+    self.assertSecPassCsvEqual(driver.value, chk)
 
   #----------------------------------------------------------------------------
   def test_read(self):
@@ -83,7 +83,7 @@ class TestAbstractStreamDriver(TestSpmHelper):
 :=ID1,2,:~NOW,:~NOW,:~NOW,,"testservice","testrole","newpass","testnotes
 more notes"
 '''
-    self.assertSpmCsvEqual(driver.value, chk)
+    self.assertSecPassCsvEqual(driver.value, chk)
     out = list(csv.reader(StringIO(driver.value)))
     chk = list(csv.reader(StringIO(chk)))
     # check id
@@ -122,7 +122,7 @@ more notes"
 :=ID1,3,:~NOW,:~NOW,:~NOW,:~NOW,"testservice","testrole","newpass","testnotes
 more notes"
 '''
-    self.assertSpmCsvEqual(driver.value, chk)
+    self.assertSecPassCsvEqual(driver.value, chk)
     out = list(csv.reader(StringIO(driver.value)))
     chk = list(csv.reader(StringIO(chk)))
     # check id
