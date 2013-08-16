@@ -6,18 +6,16 @@
 # copy: (C) CopyLoose 2013 UberDev <hardcore@uberdev.org>, No Rights Reserved.
 #------------------------------------------------------------------------------
 
-import sys, os, os.path, logging, argparse, ConfigParser, math
-import getpass, random, base64
-from . import api, engine
+# TODO: i18n...
+
+import sys, os, os.path, logging, argparse, ConfigParser, math, getpass
+import pkg_resources
+from . import api, engine, util
 from .util import adict, zulu, localtime, resolvePath, asbool, resolve
 
 #------------------------------------------------------------------------------
 DEFAULT_SHOW_MAX    = 3
-DEFAULT_CONFIG_DATA = '''\
-[default]
-driver                  = secpass.driver.file.FileDriver
-driver.path             = data.csv
-'''
+DEFAULT_CONFIG_DATA = pkg_resources.resource_string('secpass', 'res/config.ini')
 
 #------------------------------------------------------------------------------
 log = logging.getLogger(__name__)
@@ -102,7 +100,7 @@ def selectEntries(options, records, action):
       print ''
       raise ProgramExit(21)
     if not asbool(choice):
-      print 'Abort.'
+      print 'Operation aborted.'
       raise ProgramExit(22)
     break
   return records
@@ -116,18 +114,7 @@ def getPassword(options, prompt=None):
       return False, getpass.getpass()
   if options.password is not None:
     return False, options.password
-  gmin = int(options.config.get('generator.min', 24))
-  gmax = int(options.config.get('generator.max', 32))
-  glen = random.randint(gmin, gmax)
-  # todo: this generates more data than necessary... fix!
-  seq = ''
-  for i in range(glen):
-    seq += chr(random.randint(0, 255))
-  if asbool(options.config.get('generator.hex', 'false')):
-    seq = seq.encode('hex')[:glen]
-  else:
-    seq = base64.b64encode(seq, 'Fh')[:glen]
-  return True, seq
+  return (True, util.generatePassword(options.config))
 
 #------------------------------------------------------------------------------
 def cmd_add(options, engine):
@@ -150,7 +137,7 @@ def cmd_add(options, engine):
       print ''
       return 21
     if not asbool(create):
-      print 'Abort.'
+      print 'Operation aborted.'
       return 22
   try:
     display, newpass = getPassword(options)
@@ -327,7 +314,7 @@ def main(argv=None):
 
   cli = argparse.ArgumentParser(
     #usage      = '%(prog)s [-h|--help] [OPTIONS] COMMAND [CMD-OPTIONS] ...',
-    description = 'Secure Password Manager',
+    description = 'Secure Passwords',
     epilog      = '''
       Whenever a PASSWORD option is accepted, you can specify either
       the literal password, "-", or nothing at all. The literal "-"
@@ -351,9 +338,8 @@ def main(argv=None):
     help='configuration filename (default: "%(default)s")')
 
   cli.add_argument(
-    '-s', '--section', metavar='SECTION',
-    default=api.DEFAULT_SECTION,
-    help='configuration section name (default: "%(default)s")')
+    '-p', '--profile', metavar='PROFILE',
+    help='configuration profile id or name')
 
   subcmds = cli.add_subparsers(
     dest='command',
@@ -467,6 +453,7 @@ def main(argv=None):
   options.config = resolvePath(options.config)
 
   if not os.path.isfile(options.config):
+    # TODO: add a parameter "--create-config" to do this explicitly...
     cdir = os.path.dirname(options.config)
     if not os.path.isdir(cdir):
       os.makedirs(cdir)
@@ -474,7 +461,7 @@ def main(argv=None):
       fp.write(DEFAULT_CONFIG_DATA)
 
   try:
-    options.engine = engine.Engine(options.config, options.section)
+    options.engine = engine.Engine(options.config, options.profile)
   except engine.ConfigError as e:
     cli.error(e)
 
