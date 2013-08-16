@@ -39,7 +39,7 @@ entrypoints = {
 setup(
   name                  = 'secpass',
   version               = '0.1.0',
-  description           = 'Secure Password Manager',
+  description           = 'Secure Passwords',
   long_description      = README,
   classifiers           = [
     'Development Status :: 4 - Beta',
