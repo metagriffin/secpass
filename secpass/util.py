@@ -6,10 +6,15 @@
 # copy: (C) CopyLoose 2013 UberDev <hardcore@uberdev.org>, No Rights Reserved.
 #------------------------------------------------------------------------------
 
-import os, re, time
+import os, re, time, random, base64
 from .adict import adict
 from .resolve import resolve
 from .glob2re import glob2re
+
+#------------------------------------------------------------------------------
+DEFAULT_GENERATOR_MIN = 24
+DEFAULT_GENERATOR_MAX = 32
+DEFAULT_GENERATOR_HEX = False
 
 #------------------------------------------------------------------------------
 def resolvePath(name, rel=None):
@@ -53,6 +58,23 @@ def localtime(ts=None, ms=True):
     ts = time.time()
   ms = '.%03d' % (ts * 1000 % 1000,) if ms else ''
   return time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(ts)) + ms
+
+#------------------------------------------------------------------------------
+def generatePassword(config):
+  gmin = int(config.get('generator.min', DEFAULT_GENERATOR_MIN))
+  gmax = int(config.get('generator.max', DEFAULT_GENERATOR_MAX))
+  glen = random.randint(gmin, gmax)
+  # note: this generates more data than necessary... oh well. if i am
+  # *really* bored one day, it could be fixed...
+  seq = ''
+  for i in range(glen):
+    seq += chr(random.randint(0, 255))
+  if asbool(config.get('generator.hex', DEFAULT_GENERATOR_HEX)):
+    seq = seq.encode('hex')[:glen]
+  else:
+    seq = base64.b64encode(seq, 'Fh')[:glen]
+  return seq
+
 
 #------------------------------------------------------------------------------
 # end of $Id$
