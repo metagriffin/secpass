@@ -22,6 +22,7 @@ log = logging.getLogger(__name__)
 rootlog = logging.getLogger()
 rootlog.setLevel(logging.WARNING)
 rootlog.addHandler(logging.StreamHandler())
+# TODO: add a logging formatter...
 
 #------------------------------------------------------------------------------
 basefmt  = '  {idx: >{wid}}. {record.role: <{rwid}} @ {record.service: <{swid}}'

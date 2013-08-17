@@ -37,7 +37,7 @@ class Profile(object):
   #----------------------------------------------------------------------------
   def ready(self):
     if not self.driver:
-      self._loadDriver()
+      self.driver = self._loadDriver()
     return self
 
   #----------------------------------------------------------------------------
@@ -59,7 +59,7 @@ class Profile(object):
         params[param.name] = self.engine.resolvePath(val)
       else:
         params[param.name] = self.engine.resolveVars(val)
-    self.driver = driver(params)
+    return driver(params)
 
 #------------------------------------------------------------------------------
 class Engine(object):
@@ -68,7 +68,7 @@ class Engine(object):
   def __init__(self, config):
     self.cpath    = config
     self.profiles = dict()
-    self._loadConfig()
+    self.config   = self._loadConfig()
 
   #----------------------------------------------------------------------------
   def getProfile(self, profile=None):
@@ -83,21 +83,22 @@ class Engine(object):
 
   #----------------------------------------------------------------------------
   def _loadConfig(self):
-    self.config = ConfigParser.SafeConfigParser()
-    self.config.optionxform = str
-    self.config.read(self.cpath)
+    config = ConfigParser.SafeConfigParser()
+    config.optionxform = str
+    config.read(self.cpath)
     firstprof = None
-    for section in self.config.sections():
+    for section in config.sections():
       if not section.startswith('profile.'):
         continue
-      pconf = adict(self.config.items(section))
+      pconf = adict(config.items(section))
       pid   = section[8:]
       self.profiles[pid] = Profile(self, pid, pconf)
       if not firstprof:
         firstprof = pid
-    if not self.config.has_option('DEFAULT', 'profile.default') and firstprof:
+    if not config.has_option('DEFAULT', 'profile.default') and firstprof:
       log.info('setting default profile to first found profile: %s', firstprof)
-      self.config.set('DEFAULT', 'profile.default', firstprof)
+      config.set('DEFAULT', 'profile.default', firstprof)
+    return config
 
   #----------------------------------------------------------------------------
   def resolvePath(self, path):
