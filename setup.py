@@ -26,7 +26,7 @@ test_requires = [
 requires = [
   'distribute           >= 0.6.24',
   'argparse             >= 1.2.1',
-#  'python-gnupg         >= 0.3.3',
+  'python-gnupg         >= 0.3.3',
   ]
 
 entrypoints = {
