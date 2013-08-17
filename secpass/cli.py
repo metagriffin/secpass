@@ -288,7 +288,7 @@ class AliasedSubParsersAction(argparse._SubParsersAction):
       if aliases:
         dest += ' (%s)' % ','.join(aliases)
       sup = super(AliasedSubParsersAction._AliasedPseudoAction, self)
-      sup.__init__(option_strings=[], dest=dest, help=help) 
+      sup.__init__(option_strings=[], dest=dest, help=help)
   def add_parser(self, name, **kwargs):
     if 'aliases' in kwargs:
       aliases = kwargs['aliases']
@@ -306,6 +306,21 @@ class AliasedSubParsersAction(argparse._SubParsersAction):
       pseudo_action = self._AliasedPseudoAction(name, aliases, help)
       self._choices_actions.append(pseudo_action)
     return parser
+
+#------------------------------------------------------------------------------
+def cmd_init(options):
+  # USAGE: init [-h] [-f]
+  if os.path.exists(options.config):
+    if not options.force:
+      print >>sys.stderr, 'file "%s" exists -- use "--force" to overwrite' \
+        % (options.config,)
+      return 20
+  cdir = os.path.dirname(options.config)
+  if not os.path.isdir(cdir):
+    os.makedirs(cdir)
+  with open(options.config, 'wb') as fp:
+    fp.write(DEFAULT_CONFIG_DATA)
+  return 0
 
 #------------------------------------------------------------------------------
 def main(argv=None):
@@ -349,6 +364,16 @@ def main(argv=None):
   # TODO: re-enable the aliases... but first figure out how to
   #       eliminate the aliases from the list of available commands
   #       in the help text.
+
+  # INIT command
+  subcli = subcmds.add_parser(
+    'init', #aliases=('i', 'ini',),
+    help='create initial secpass configuration file')
+  subcli.add_argument(
+    '-f', '--force',
+    action='store_true',
+    help='force overwrite of existing configuration file')
+  subcli.set_defaults(call=cmd_init)
 
   # ADD command
   subcli = subcmds.add_parser(
@@ -453,12 +478,13 @@ def main(argv=None):
   options.config = resolvePath(options.config)
 
   if not os.path.isfile(options.config):
-    # TODO: add a parameter "--create-config" to do this explicitly...
-    cdir = os.path.dirname(options.config)
-    if not os.path.isdir(cdir):
-      os.makedirs(cdir)
-    with open(options.config, 'wb') as fp:
-      fp.write(DEFAULT_CONFIG_DATA)
+    if options.call is not cmd_init:
+      cli.error(
+        'configuration "%s" does not exist -- use "%s init" to create it'
+        % (options.config, cli.prog))
+    return options.call(options)
+  if options.call is cmd_init:
+    return options.call(options)
 
   try:
     options.engine = engine.Engine(options.config, options.profile)
