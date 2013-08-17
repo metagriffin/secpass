@@ -114,7 +114,7 @@ def getPassword(options, prompt=None):
       return False, getpass.getpass()
   if options.password is not None:
     return False, options.password
-  return (True, util.generatePassword(options.config))
+  return (True, util.generatePassword(options.profile.settings))
 
 #------------------------------------------------------------------------------
 def cmd_add(options, engine):
@@ -487,14 +487,17 @@ def main(argv=None):
     return options.call(options)
 
   try:
-    options.engine = engine.Engine(options.config, options.profile)
+    options.engine = engine.Engine(options.config)
   except engine.ConfigError as e:
     cli.error(e)
 
-  options.config = options.engine.settings
+  try:
+    options.profile = options.engine.getProfile(options.profile)
+  except KeyError:
+    cli.error('profile "%s" not found' % (options.profile,))
 
   try:
-    return options.call(options, options.engine)
+    return options.call(options, options.profile)
   except ProgramExit as e:
     return e.message
 
