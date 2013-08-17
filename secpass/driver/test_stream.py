@@ -146,7 +146,7 @@ more notes"
     self.assertGreater(out[3][4], out[2][4])
     self.assertEqual(out[3][4], out[4][4])
     # check deleted
-    self.assertIsNear(float(out[4][5]), time.time(), plusminus=0.5)
+    self.assertAlmostEqual(float(out[4][5]), time.time(), delta=0.5)
     self.assertEqual(len(list(driver.find())), 0)
     with self.assertRaises(api.EntryNotFound):
       dent = driver.read(eid)

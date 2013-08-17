@@ -17,12 +17,6 @@ class TestSecPassHelper(unittest.TestCase):
     self.assertRegexpMatches(text, '^[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}$')
 
   #----------------------------------------------------------------------------
-  def assertIsNear(self, test, check, plusminus=0):
-    self.assertTrue(
-      test >= check - plusminus and test <= check + plusminus,
-      msg='%r is near %r' % (test, check))
-
-  #----------------------------------------------------------------------------
   def assertSecPassCsvEqual(self, test, check):
     out = list(csv.reader(StringIO(test)))
     chk = list(csv.reader(StringIO(check)))
@@ -47,10 +41,10 @@ class TestSecPassHelper(unittest.TestCase):
           elif expr == '!NULL':
             self.assertTrue(val)
           elif expr.startswith('~NOW'):
-            pm = 1
+            delta = 1
             if expr.startswith('~NOW~'):
-              pm = float(expr[5:])
-            self.assertIsNear(float(val), time.time(), plusminus=pm)
+              delta = float(expr[5:])
+            self.assertAlmostEqual(float(val), time.time(), delta=delta)
           elif expr.startswith('$'):
             tab[expr[1:]] = val
           elif expr.startswith('='):
