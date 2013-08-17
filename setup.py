@@ -27,6 +27,11 @@ requires = [
   'distribute           >= 0.6.24',
   'argparse             >= 1.2.1',
   'python-gnupg         >= 0.3.3',
+
+  # TODO: how to require these only if secpass-gui is wanted?...
+  # todo: if linux, require wxPython >= 2.9.4.1
+  'wxPython             >= 2.9.4.0',
+  'ObjectListView       >= 1.2',
   ]
 
 entrypoints = {

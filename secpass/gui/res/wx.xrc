@@ -1,0 +1,569 @@
+<?xml version="1.0" ?>
+<resource>
+  <object class="wxFrame" name="window.main">
+    <object class="wxMenuBar" name="menubar">
+      <object class="wxMenu" name="menu.file">
+        <object class="wxMenuItem" name="menuitem.updatecheck">
+          <label>Check for updates...</label>
+          <help>Check to see if there is a better secpass version available</help>
+        </object>
+        <object class="separator"/>
+        <object class="wxMenuItem" name="wxID_PREFERENCES">
+          <label>Settings and preferences...</label>
+          <help>Open Secure Passwords profiles, settings, and preferences</help>
+        </object>
+        <object class="separator"/>
+        <object class="wxMenuItem" name="wxID_EXIT">
+          <label>Quit</label>
+          <help>Close Secure Passwords</help>
+        </object>
+        <label>Control</label>
+        <help>Manage Secure Passwords control functions</help>
+      </object>
+      <object class="wxMenu" name="menu.profile">
+        <label>Profile</label>
+        <help>Select which profile's entries to view and/or modify</help>
+        <object class="wxMenuItem" name="menuitem.profile">
+          <label>Default</label>
+          <radio>1</radio>
+          <checked>1</checked>
+        </object>
+      </object>
+      <object class="wxMenu" name="menu.help">
+        <object class="wxMenuItem" id="wxID_HELP_CONTENTS" name="wxID_HELP">
+          <label>Online contents\tF1</label>
+          <help>Open the Secure Passwords on-line help web page</help>
+        </object>
+        <object class="wxMenuItem" id="wxID_ABOUT" name="wxID_ABOUT">
+          <label>&amp;About...</label>
+          <help>About Secure Passwords</help>
+        </object>
+        <label>Help</label>
+        <help>General help section</help>
+      </object>
+    </object>
+    <object class="wxToolBar" name="toolbar">
+      <object class="tool" name="tool.create">
+        <bitmap stock_id="wxART_ADD_BOOKMARK"/>
+        <tooltip>Add new entry</tooltip>
+        <longhelp>Add new entry</longhelp>
+        <label>Add new entry</label>
+      </object>
+      <object class="separator"/>
+      <object class="tool" name="tool.update">
+        <bitmap>update-24x24.png</bitmap>
+        <tooltip>Edit selected entry</tooltip>
+        <longhelp>Edit selected entry</longhelp>
+        <label>Edit selected entry</label>
+      </object>
+      <object class="tool" name="tool.rotate">
+        <bitmap>rotate-24x24.png</bitmap>
+        <tooltip>Rotate selected entries</tooltip>
+        <longhelp>Rotate selected entries</longhelp>
+        <label>Rotate selected entries</label>
+      </object>
+      <object class="tool" name="tool.copy">
+        <bitmap stock_id="wxART_PASTE"/>
+        <tooltip>Copy selected entry's password to the clipboard</tooltip>
+        <longhelp>Copy selected entry's password to the clipboard</longhelp>
+        <label>Copy selected entry's password to the clipboard</label>
+      </object>
+      <object class="separator"/>
+      <object class="tool" name="tool.delete">
+        <bitmap stock_id="wxART_CUT"/>
+        <tooltip>Delete selected entries</tooltip>
+        <longhelp>Delete selected entries</longhelp>
+        <label>Delete selected entries</label>
+      </object>
+    </object>
+    <object class="wxBoxSizer">
+      <orient>wxVERTICAL</orient>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <object class="sizeritem">
+            <object class="wxStaticText" name="label.filter">
+              <label>Filter entries:</label>
+              <style>wxALIGN_CENTRE</style>
+            </object>
+            <flag>wxRIGHT|wxALIGN_CENTRE_VERTICAL</flag>
+            <border>5</border>
+          </object>
+          <orient>wxHORIZONTAL</orient>
+          <object class="sizeritem">
+            <object class="wxTextCtrl" name="input.filter">
+              <tooltip>Enter a search expression</tooltip>
+            </object>
+            <option>1</option>
+            <flag>wxALIGN_CENTRE_VERTICAL</flag>
+          </object>
+        </object>
+        <flag>wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTRE_VERTICAL</flag>
+        <border>5</border>
+      </object>
+      <object class="sizeritem">
+        <object class="wxBoxSizer">
+          <object class="sizeritem">
+            <object class="wxStaticLine"/>
+            <option>1</option>
+            <flag>wxEXPAND</flag>
+            <border>5</border>
+          </object>
+          <orient>wxHORIZONTAL</orient>
+        </object>
+        <option>0</option>
+        <flag>wxBOTTOM|wxEXPAND</flag>
+        <border>5</border>
+      </object>
+      <object class="sizeritem">
+        <object class="wxPanel" name="box.entries">
+        </object>
+        <option>1</option>
+        <flag>wxEXPAND</flag>
+      </object>
+      <option>1</option>
+      <flag>wxEXPAND</flag>
+    </object>
+    <object class="wxStatusBar" name="statusbar">
+      <fields>2</fields>
+      <widths>-1,30</widths>
+    </object>
+    <title>Secure Passwords</title>
+    <centered>1</centered>
+  </object>
+  <object class="wxWizard" name="wizard.profile">
+    <object class="wxWizardPageSimple" name="wizardpage.generic">
+      <object class="wxPanel" name="panel.otheroptions">
+        <object class="wxBoxSizer">
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <object class="sizeritem">
+                <object class="wxStaticBoxSizer">
+                  <object class="sizeritem">
+                    <object class="wxFlexGridSizer">
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>Name</label>
+                        </object>
+                        <flag>wxTOP</flag>
+                        <border>5</border>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxBoxSizer">
+                          <object class="sizeritem">
+                            <object class="wxTextCtrl" name="input.spp.url"/>
+                            <flag>wxEXPAND</flag>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxStaticText">
+                              <label>Example: &quot;My Personal Passwords&quot;</label>
+                            </object>
+                            <flag>wxEXPAND</flag>
+                          </object>
+                          <orient>wxVERTICAL</orient>
+                        </object>
+                        <option>1</option>
+                        <flag>wxEXPAND</flag>
+                      </object>
+                      <object class="spacer"/>
+                      <object class="sizeritem">
+                        <object class="wxCheckBox">
+                          <label>Set as default profile</label>
+                          <checked>1</checked>
+                        </object>
+                        <flag>wxTOP</flag>
+                        <border>10</border>
+                      </object>
+                      <cols>2</cols>
+                      <rows>2</rows>
+                      <vgap>5</vgap>
+                      <hgap>5</hgap>
+                    </object>
+                    <flag>wxEXPAND</flag>
+                  </object>
+                  <label>Profile options</label>
+                  <orient>wxVERTICAL</orient>
+                </object>
+                <flag>wxEXPAND</flag>
+              </object>
+              <object class="sizeritem">
+                <object class="wxStaticBoxSizer">
+                  <object class="sizeritem">
+                    <object class="wxFlexGridSizer">
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>Min length</label>
+                        </object>
+                        <flag>wxTOP</flag>
+                        <border>5</border>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxBoxSizer">
+                          <object class="sizeritem">
+                            <object class="wxTextCtrl" name="input.spp.url"/>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxStaticText">
+                              <label>Optional, default: 24</label>
+                            </object>
+                          </object>
+                          <orient>wxVERTICAL</orient>
+                        </object>
+                        <option>1</option>
+                        <flag>wxEXPAND</flag>
+                      </object>
+                      <cols>2</cols>
+                      <rows>3</rows>
+                      <vgap>5</vgap>
+                      <hgap>5</hgap>
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>Max length</label>
+                        </object>
+                        <flag>wxTOP</flag>
+                        <border>5</border>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxBoxSizer">
+                          <object class="sizeritem">
+                            <object class="wxTextCtrl" name="input.spp.url"/>
+                          </object>
+                          <object class="sizeritem">
+                            <object class="wxStaticText">
+                              <label>Optional, default: 32</label>
+                            </object>
+                          </object>
+                          <orient>wxVERTICAL</orient>
+                        </object>
+                      </object>
+                      <object class="spacer"/>
+                      <object class="sizeritem">
+                        <object class="wxCheckBox">
+                          <label>HEX characters only (A-F and 0-9)</label>
+                        </object>
+                      </object>
+                    </object>
+                  </object>
+                  <label>Password generator</label>
+                  <orient>wxVERTICAL</orient>
+                </object>
+                <flag>wxEXPAND</flag>
+              </object>
+              <orient>wxVERTICAL</orient>
+            </object>
+            <option>1</option>
+            <flag>wxEXPAND</flag>
+          </object>
+          <orient>wxHORIZONTAL</orient>
+        </object>
+      </object>
+    </object>
+    <object class="wxWizardPageSimple" name="wizardpage.driver">
+      <object class="wxPanel" name="panel.driver">
+        <object class="wxBoxSizer">
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <object class="sizeritem">
+                <object class="wxStaticText">
+                  <label>Select a password storage:</label>
+                </object>
+                <flag>wxTOP|wxEXPAND</flag>
+                <border>10</border>
+              </object>
+              <object class="sizeritem">
+                <object class="wxRadioButton" name="option.driver.spp">
+                  <label>Remote server (using secpass protocol v1)</label>
+                  <enabled>0</enabled>
+                </object>
+                <flag>wxTOP|wxEXPAND</flag>
+                <border>10</border>
+              </object>
+              <object class="sizeritem">
+                <object class="wxStaticText">
+                  <label>Example: www.opiyum.net
+(Currently unavailable as it is incomplete)</label>
+                  <enabled>0</enabled>
+                </object>
+                <flag>wxLEFT|wxEXPAND</flag>
+                <border>22</border>
+              </object>
+              <object class="sizeritem">
+                <object class="wxRadioButton" name="option.driver.gpgfile">
+                  <label>Encrypted CSV file (stored locally)</label>
+                </object>
+                <flag>wxTOP|wxEXPAND</flag>
+                <border>10</border>
+              </object>
+              <object class="sizeritem">
+                <object class="wxStaticText">
+                  <label>Requires a functional GPG-agent is present.</label>
+                  <wrap>250</wrap>
+                </object>
+                <flag>wxLEFT|wxEXPAND</flag>
+                <border>22</border>
+              </object>
+              <object class="sizeritem">
+                <object class="wxRadioButton" name="option.driver.file">
+                  <label>Plain-text CSV file (stored locally)</label>
+                </object>
+                <flag>wxTOP|wxEXPAND</flag>
+                <border>10</border>
+              </object>
+              <object class="sizeritem">
+                <object class="wxStaticText">
+                  <label>IMPORTANT: this storage mechanism is recommended *only* for debugging or experimentation. It should not be used for real passwords.</label>
+                  <wrap>250</wrap>
+                </object>
+                <flag>wxLEFT|wxEXPAND</flag>
+                <border>22</border>
+              </object>
+              <orient>wxVERTICAL</orient>
+            </object>
+            <option>1</option>
+            <flag>wxEXPAND</flag>
+          </object>
+          <orient>wxHORIZONTAL</orient>
+        </object>
+      </object>
+    </object>
+    <object class="wxWizardPageSimple" name="wizardpage.driveroptions">
+      <object class="wxPanel" name="panel.driveroptions.file">
+        <object class="wxBoxSizer">
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <object class="sizeritem">
+                <object class="wxStaticText">
+                  <label>Specify file storage options:</label>
+                </object>
+                <flag>wxTOP|wxEXPAND</flag>
+                <border>10</border>
+              </object>
+              <orient>wxVERTICAL</orient>
+              <object class="sizeritem">
+                <object class="wxFlexGridSizer">
+                  <object class="sizeritem">
+                    <object class="wxStaticText">
+                      <label>Path</label>
+                    </object>
+                    <flag>wxTOP</flag>
+                    <border>5</border>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl"/>
+                        <flag>wxEXPAND</flag>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>Default: &quot;~/.config/secpass/data.csv&quot;</label>
+                        </object>
+                      </object>
+                      <orient>wxVERTICAL</orient>
+                    </object>
+                  </object>
+                  <cols>2</cols>
+                  <rows>1</rows>
+                  <vgap>5</vgap>
+                  <hgap>5</hgap>
+                </object>
+                <option>1</option>
+                <flag>wxTOP|wxEXPAND</flag>
+                <border>10</border>
+              </object>
+            </object>
+            <option>1</option>
+            <flag>wxEXPAND</flag>
+          </object>
+          <orient>wxHORIZONTAL</orient>
+        </object>
+        <hidden>1</hidden>
+      </object>
+      <object class="wxPanel" name="panel.driveroptions.gpgfile">
+        <object class="wxBoxSizer">
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <object class="sizeritem">
+                <object class="wxStaticText">
+                  <label>Specify encrypted file storage options:</label>
+                </object>
+                <flag>wxTOP|wxEXPAND</flag>
+                <border>10</border>
+              </object>
+              <orient>wxVERTICAL</orient>
+              <object class="sizeritem">
+                <object class="wxFlexGridSizer">
+                  <object class="sizeritem">
+                    <object class="wxStaticText">
+                      <label>Path</label>
+                    </object>
+                    <flag>wxTOP</flag>
+                    <border>5</border>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl"/>
+                        <flag>wxEXPAND</flag>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>Default: &quot;~/.config/secpass/data.csv.gpg&quot;</label>
+                        </object>
+                      </object>
+                      <orient>wxVERTICAL</orient>
+                    </object>
+                    <option>1</option>
+                    <flag>wxEXPAND</flag>
+                  </object>
+                  <object class="spacer"/>
+                  <object class="sizeritem">
+                    <object class="wxCheckBox">
+                      <label>Use GPG-agent (required for now)</label>
+                      <checked>1</checked>
+                      <enabled>0</enabled>
+                    </object>
+                    <flag>wxTOP</flag>
+                    <border>10</border>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxStaticText">
+                      <label>Identity</label>
+                    </object>
+                    <flag>wxTOP</flag>
+                    <border>15</border>
+                  </object>
+                  <cols>2</cols>
+                  <rows>3</rows>
+                  <vgap>5</vgap>
+                  <hgap>5</hgap>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="input.gpgfile.identity"/>
+                        <option>1</option>
+                        <flag>wxEXPAND</flag>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>Example: &quot;user@example.com&quot;</label>
+                        </object>
+                      </object>
+                      <orient>wxVERTICAL</orient>
+                    </object>
+                    <option>1</option>
+                    <flag>wxTOP|wxEXPAND</flag>
+                    <border>10</border>
+                  </object>
+                </object>
+                <option>1</option>
+                <flag>wxTOP|wxEXPAND</flag>
+                <border>10</border>
+              </object>
+            </object>
+            <option>1</option>
+            <flag>wxEXPAND</flag>
+          </object>
+          <orient>wxHORIZONTAL</orient>
+        </object>
+        <hidden>1</hidden>
+      </object>
+      <object class="wxPanel" name="panel.driveroptions.secpassp">
+        <object class="wxBoxSizer">
+          <object class="sizeritem">
+            <object class="wxBoxSizer">
+              <object class="sizeritem">
+                <object class="wxStaticText">
+                  <label>Specify remote server options:</label>
+                </object>
+                <flag>wxTOP|wxEXPAND</flag>
+                <border>10</border>
+              </object>
+              <orient>wxVERTICAL</orient>
+              <object class="sizeritem">
+                <object class="wxFlexGridSizer">
+                  <object class="sizeritem">
+                    <object class="wxStaticText">
+                      <label>Server URL</label>
+                    </object>
+                    <flag>wxTOP</flag>
+                    <border>5</border>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="input.spp.url"/>
+                        <flag>wxEXPAND</flag>
+                      </object>
+                      <object class="sizeritem">
+                        <object class="wxStaticText">
+                          <label>Example: &quot;www.opiyum.net/secpass&quot;</label>
+                        </object>
+                      </object>
+                      <orient>wxVERTICAL</orient>
+                    </object>
+                    <option>1</option>
+                    <flag>wxEXPAND</flag>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxStaticText">
+                      <label>Username</label>
+                    </object>
+                    <flag>wxTOP</flag>
+                    <border>15</border>
+                  </object>
+                  <cols>2</cols>
+                  <rows>3</rows>
+                  <vgap>5</vgap>
+                  <hgap>5</hgap>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="input.spp.username"/>
+                        <option>1</option>
+                        <flag>wxEXPAND</flag>
+                      </object>
+                      <orient>wxVERTICAL</orient>
+                    </object>
+                    <option>1</option>
+                    <flag>wxTOP|wxEXPAND</flag>
+                    <border>10</border>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxStaticText">
+                      <label>Password</label>
+                    </object>
+                    <flag>wxTOP</flag>
+                    <border>15</border>
+                  </object>
+                  <object class="sizeritem">
+                    <object class="wxBoxSizer">
+                      <object class="sizeritem">
+                        <object class="wxTextCtrl" name="input.spp.password">
+                          <style>wxTE_PASSWORD</style>
+                        </object>
+                        <option>1</option>
+                        <flag>wxEXPAND</flag>
+                      </object>
+                      <orient>wxVERTICAL</orient>
+                    </object>
+                    <option>1</option>
+                    <flag>wxTOP|wxEXPAND</flag>
+                    <border>10</border>
+                  </object>
+                </object>
+                <option>1</option>
+                <flag>wxTOP|wxEXPAND</flag>
+                <border>10</border>
+              </object>
+            </object>
+            <option>1</option>
+            <flag>wxEXPAND</flag>
+          </object>
+          <orient>wxHORIZONTAL</orient>
+        </object>
+      </object>
+    </object>
+    <title>Profile Wizard</title>
+    <bitmap>logo-let-128x128.png</bitmap>
+  </object>
+</resource>

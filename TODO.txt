@@ -1,0 +1,12 @@
+- allow password generator configurations have cascading defaults:
+    1. profile-specific values
+    2. user-specific default values
+    3. application-provided default values
+
+- create a multi-entry-edit mode
+
+- ObjectListView:
+    - should trigger a `wx.EVT_LIST_ITEM_DESELECTED` when a SetFilter
+      causes the selection to change
+    - ?? should trigger a `wx.EVT_LIST_ITEM_DESELECTED` when a SetObjects
+      causes the selection to change
