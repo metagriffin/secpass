@@ -10,6 +10,8 @@ import os, os.path, ConfigParser
 from . import api
 from .util import adict, asbool, resolve
 
+# TODO: add support for encrypting parts of the configuration file...
+
 #------------------------------------------------------------------------------
 class ConfigError(Exception): pass
 
@@ -17,21 +19,61 @@ class ConfigError(Exception): pass
 class Engine(object):
 
   #----------------------------------------------------------------------------
-  def __init__(self, config=None, section=None):
-    self.cpath = config or api.DEFAULT_CONFIG
-    self.section = section or api.DEFAULT_SECTION
-    self.loadConfig()
-    self.loadDriver()
+  def __init__(self, config, profile=None):
+    self.cpath = config
+    self.profname = profile
+    self.profiles = dict()
+    self.settings = None
+    self._loadConfig()
+    if self.settings:
+      self._loadDriver()
 
   #----------------------------------------------------------------------------
-  def loadConfig(self):
+  def switchProfile(self, profile):
+    if profile not in self.profiles:
+      raise ValueError('no such profile ID "%s"' % (profile,))
+    if self.profname == profile:
+      return self
+    self.profname = profile
+    self.settings = self.profiles[profile]
+    self._loadDriver()
+    return self
+
+  #----------------------------------------------------------------------------
+  def _loadConfig(self):
     self.config = ConfigParser.SafeConfigParser()
     self.config.optionxform = str
     self.config.read(self.cpath)
-    self.settings = adict(self.config.items(self.section))
+    if self.profname is None:
+      try:
+        self.profname = self.config.get('DEFAULT', 'profile.default')
+      except ConfigParser.NoOptionError:
+        self.profname = None
+    for section in self.config.sections():
+      if not section.startswith('profile.'):
+        continue
+      profile = adict(self.config.items(section))
+      profile.id = section[8:]
+      self.profiles[profile.id] = profile
+      if not self.profname:
+        self.profname = profile.id
+    if not self.profname:
+      return
+    self.settings = self.profiles.get(self.profname, None)
+    if self.settings:
+      return
+    for profile in self.profiles.values():
+      if profile.name == self.profname:
+        self.settings = profile
+        return
+    for profile in self.profiles.values():
+      if profile.name.lower() == self.profname.lower():
+        self.settings = profile
+        return
+    raise ConfigError('profile "%s" not found' % (self.profname,))
 
   #----------------------------------------------------------------------------
-  def loadDriver(self):
+  def _loadDriver(self):
     driver = resolve(self.settings.get('driver', api.DEFAULT_DRIVER))
     params = adict()
     for param in getattr(driver, 'PARAMS', []):
