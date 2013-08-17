@@ -5,7 +5,7 @@
       <object class="wxMenu" name="menu.file">
         <object class="wxMenuItem" name="menuitem.updatecheck">
           <label>Check for updates...</label>
-          <help>Check to see if there is a better secpass version available</help>
+          <help>Check to see if there is a better Secure Passwords version available</help>
         </object>
         <object class="separator"/>
         <object class="wxMenuItem" name="wxID_PREFERENCES">

@@ -61,6 +61,7 @@ class SecPassGui(wx.App):
     self.engine   = engine.Engine(self.config)
 
     # TODO: remove this...
+    print 'TODO: remove this force-profile-to-"test"...'
     self.curpid = 'test'
 
     try:
@@ -157,15 +158,15 @@ class SecPassGui(wx.App):
     self.elpcol = OLV.ColumnDefn('Profile', 
                                  valueGetter=self.getEntryProfileName,
                                  minimumWidth=10, isSpaceFilling=True)
-
-    self.elcols = [
-      self.elpcol,
+    self.elocols = [
       OLV.ColumnDefn('Service',  valueGetter='service',  minimumWidth=10, isSpaceFilling=True),
       OLV.ColumnDefn('Role',     valueGetter='role',     minimumWidth=10, isSpaceFilling=True),
       OLV.ColumnDefn('Password', valueGetter='password', minimumWidth=10, isSpaceFilling=True),
       OLV.ColumnDefn('Notes',    valueGetter='notes',    minimumWidth=10, isSpaceFilling=True,
-                     cellEditorCreator=self.notesEditor),
+                     #cellEditorCreator=self.notesEditor
+                     ),
       ]
+    self.elcols = [self.elpcol] + self.elocols
     self.elview.SetColumns(self.elcols)
     self.elview.SetEmptyListMsg('No entries to display.')
     self.elview.SetObjects([])
@@ -343,8 +344,11 @@ class SecPassGui(wx.App):
     self.elview.SetObjects([])
     if self.curpid is not None:
       profiles = [self.curpid]
+      self.elcols = self.elocols
     else:
       profiles = self.engine.profiles.keys()
+      self.elcols = [self.elpcol] + self.elocols
+    self.elview.SetColumns(self.elcols)
     for pid in profiles:
       profile = self.engine.getProfile(pid)
       for entry in profile.find():
