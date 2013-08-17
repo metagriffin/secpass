@@ -11,6 +11,9 @@ from . import api
 from .util import adict, asbool, resolve
 
 # TODO: add support for encrypting parts of the configuration file...
+# todo: with the current `Profile` settings approach, you cannot specify
+#       default "generator.*" settings in the "DEFAULT" section that override
+#       the system defaults... this is unfortunate. fix!
 
 log = logging.getLogger(__name__)
 
@@ -33,6 +36,10 @@ class Profile(object):
   def update(self, *args, **kw):    return self.driver.update(*args, **kw)
   def delete(self, *args, **kw):    return self.driver.delete(*args, **kw)
   def find(self, *args, **kw):      return self.driver.find(*args, **kw)
+
+  @property
+  def name(self):
+    return self.settings.name
 
   #----------------------------------------------------------------------------
   def ready(self):
