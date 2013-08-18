@@ -25,3 +25,14 @@ download:
 
 upload:
 	python setup.py sdist upload
+
+# TODO: extract version from setup.py...
+pot:
+	find secpass -iname '*.py' \
+	  | xargs xgettext \
+            --language Python \
+            --copyright-holder 'UberDev' \
+            --package-name secpass \
+            --package-version 0.1.0 \
+            --msgid-bugs-address metagriffin@uberdev.org \
+            --output -
