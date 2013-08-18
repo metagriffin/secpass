@@ -11,8 +11,7 @@
 
 import time, uuid, csv, re, copy
 from secpass import api
-from secpass.driver import base
-from secpass.util import glob2re
+from secpass.util import glob2re, pick
 
 #------------------------------------------------------------------------------
 class StreamEntry(api.Entry):
@@ -29,12 +28,12 @@ class StreamEntry(api.Entry):
     return self
 
 #------------------------------------------------------------------------------
-class AbstractStreamDriver(base.Driver):
+class AbstractStreamDriver(api.Store):
 
   PARAMS = ()
 
   FIELDS = ('id', 'seq', 'created', 'updated', 'lastused', 'deleted') \
-    + api.Entry.PROFILE_ITEMS
+    + api.Entry.ATTRIBUTES
 
   #----------------------------------------------------------------------------
   def __init__(self, *args, **kw):
@@ -43,7 +42,7 @@ class AbstractStreamDriver(base.Driver):
   #----------------------------------------------------------------------------
   def create(self, entry):
     new = StreamEntry(id=str(uuid.uuid4()), seq=0)
-    for fld in api.Entry.PROFILE_ITEMS:
+    for fld in api.Entry.ATTRIBUTES:
       setattr(new, fld, getattr(entry, fld))
     new.deleted = None
     new.created = new.updated = new.lastused = time.time()
@@ -77,12 +76,28 @@ class AbstractStreamDriver(base.Driver):
     if cur is None:
       raise api.EntryNotFound(entry_id)
     new = copy.deepcopy(cur)
+    for fld in api.Entry.ATTRIBUTES:
+      setattr(new, fld, getattr(entry, fld))
     new.seq += 1
     new.updated = new.lastused = time.time()
-    for fld in api.Entry.PROFILE_ITEMS:
-      setattr(new, fld, getattr(entry, fld))
     self.saveEntries(entries + [new])
     return new
+
+  #----------------------------------------------------------------------------
+  def modify(self, entry_id, **kw):
+    cur = None
+    entries = list(self.loadEntries())
+    for test in entries:
+      if entry_id == test.id and ( cur is None or cur.seq < test.seq ):
+        cur = test
+    if cur is None or cur.deleted is not None:
+      raise api.EntryNotFound(entry_id)
+    new = copy.deepcopy(cur)
+    new.update(kw)
+    new.seq += 1
+    new.updated = new.lastused = time.time()
+    self.saveEntries(entries + [new])
+    return True
 
   #----------------------------------------------------------------------------
   def delete(self, entry_id):
