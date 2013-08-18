@@ -6,7 +6,7 @@
 # copy: (C) CopyLoose 2013 UberDev <hardcore@uberdev.org>, No Rights Reserved.
 #------------------------------------------------------------------------------
 
-import os, re, time, random, base64
+import os, re, time, random, base64, gettext
 from .adict import adict
 from .resolve import resolve
 from .glob2re import glob2re
@@ -15,6 +15,12 @@ from .glob2re import glob2re
 DEFAULT_GENERATOR_MIN = 24
 DEFAULT_GENERATOR_MAX = 32
 DEFAULT_GENERATOR_HEX = False
+
+#------------------------------------------------------------------------------
+def _(msgid, *args, **kw):
+  if args or kw:
+    return gettext.gettext(msgid).format(*args, **kw)
+  return gettext.gettext(msgid)
 
 #------------------------------------------------------------------------------
 def resolvePath(name, rel=None):
