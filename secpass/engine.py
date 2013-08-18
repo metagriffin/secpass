@@ -21,21 +21,15 @@ log = logging.getLogger(__name__)
 class ConfigError(Exception): pass
 
 #------------------------------------------------------------------------------
-class Profile(object):
+class Profile(api.ProxyStore):
 
   #----------------------------------------------------------------------------
-  def __init__(self, engine, pid, settings):
+  def __init__(self, engine, pid, settings, *args, **kw):
+    super(Profile, self).__init__(*args, **kw)
     self.engine   = engine
     self.id       = pid
     self.settings = settings
     self.driver   = None
-
-  #----------------------------------------------------------------------------
-  def create(self, *args, **kw):    return self.driver.create(*args, **kw)
-  def read(self, *args, **kw):      return self.driver.read(*args, **kw)
-  def update(self, *args, **kw):    return self.driver.update(*args, **kw)
-  def delete(self, *args, **kw):    return self.driver.delete(*args, **kw)
-  def find(self, *args, **kw):      return self.driver.find(*args, **kw)
 
   @property
   def name(self):
@@ -45,6 +39,7 @@ class Profile(object):
   def ready(self):
     if not self.driver:
       self.driver = self._loadDriver()
+      self.proxy  = self.driver
     return self
 
   #----------------------------------------------------------------------------
