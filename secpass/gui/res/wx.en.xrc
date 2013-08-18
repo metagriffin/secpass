@@ -150,7 +150,7 @@
                       <object class="sizeritem">
                         <object class="wxBoxSizer">
                           <object class="sizeritem">
-                            <object class="wxTextCtrl" name="input.spp.url"/>
+                            <object class="wxTextCtrl" name="input.profile.name"/>
                             <flag>wxEXPAND</flag>
                           </object>
                           <object class="sizeritem">
@@ -199,7 +199,7 @@
                       <object class="sizeritem">
                         <object class="wxBoxSizer">
                           <object class="sizeritem">
-                            <object class="wxTextCtrl" name="input.spp.url"/>
+                            <object class="wxTextCtrl" name="input.generator.min"/>
                           </object>
                           <object class="sizeritem">
                             <object class="wxStaticText">
@@ -225,7 +225,7 @@
                       <object class="sizeritem">
                         <object class="wxBoxSizer">
                           <object class="sizeritem">
-                            <object class="wxTextCtrl" name="input.spp.url"/>
+                            <object class="wxTextCtrl" name="input.generator.max"/>
                           </object>
                           <object class="sizeritem">
                             <object class="wxStaticText">
@@ -271,7 +271,7 @@
               </object>
               <object class="sizeritem">
                 <object class="wxRadioButton" name="option.driver.spp">
-                  <label>Remote server (using secpass protocol v1)</label>
+                  <label>Remote server (using SecPass protocol v1)</label>
                   <enabled>0</enabled>
                 </object>
                 <flag>wxTOP|wxEXPAND</flag>
@@ -467,7 +467,7 @@
         </object>
         <hidden>1</hidden>
       </object>
-      <object class="wxPanel" name="panel.driveroptions.secpassp">
+      <object class="wxPanel" name="panel.driveroptions.spp">
         <object class="wxBoxSizer">
           <object class="sizeritem">
             <object class="wxBoxSizer">
