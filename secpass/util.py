@@ -81,6 +81,18 @@ def generatePassword(config):
     seq = base64.b64encode(seq, 'Fh')[:glen]
   return seq
 
+#------------------------------------------------------------------------------
+def pick(src, *keys):
+  '''
+  Given a dict and iterable of keys, return a dict containing
+  only those keys.
+  '''
+  if not src: # pragma: no cover
+    return dict()
+  try:
+    return {k: v for k, v in src.items() if k in keys}
+  except AttributeError:
+    return {k: getattr(src, k) for k in keys if hasattr(src, k)}
 
 #------------------------------------------------------------------------------
 # end of $Id$
