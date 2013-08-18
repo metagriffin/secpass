@@ -6,6 +6,8 @@
 # copy: (C) CopyLoose 2013 UberDev <hardcore@uberdev.org>, No Rights Reserved.
 #------------------------------------------------------------------------------
 
+from .util import pick
+
 #------------------------------------------------------------------------------
 class LimitExceeded(Exception): pass
 class EntryNotFound(Exception): pass
@@ -26,9 +28,9 @@ Sequence.ALL     = Sequence('all')
 #------------------------------------------------------------------------------
 class Entry(object):
 
-  PROFILE_ITEMS = ('service', 'role', 'password', 'notes')
+  ATTRIBUTES = ('service', 'role', 'password', 'notes')
 
-  # TODO: move `created`, `updated` and `lastused` to here...
+  # TODO: move `created`, `updated` and `lastused` to here?...
 
   #----------------------------------------------------------------------------
   def __init__(self,
@@ -44,6 +46,12 @@ class Entry(object):
     self.notes    = notes or None
 
   #----------------------------------------------------------------------------
+  def update(self, *args, **kw):
+    for k, v in pick(dict(*args, **kw), *self.ATTRIBUTES).items():
+      setattr(self, k, v)
+    return self
+
+  #----------------------------------------------------------------------------
   def asdict(self):
     return dict(self.__dict__)
 
@@ -51,6 +59,87 @@ class Entry(object):
   def __repr__(self):
     return '<secpass.Entry %r>' % ({
       k: v for k, v in self.__dict__.items() if k != 'password'})
+
+
+#------------------------------------------------------------------------------
+class Store(object):
+
+  #----------------------------------------------------------------------------
+  def create(self, entry):
+    '''
+    Create a new entry -- returns a fully qualified Entry object (with
+    valid ID, timestamps, etc).
+    '''
+    raise NotImplementedError()
+
+  #----------------------------------------------------------------------------
+  def find(self, expr=None):
+    '''
+    Returns a list of all entries (with passwords removed) in this
+    Store that match the specified search expression `expr`. If `expr`
+    is None or empty, all entries are returned. If the password for
+    a given entry is required, use :meth:`read`.
+    '''
+    raise NotImplementedError()
+
+  #----------------------------------------------------------------------------
+  def read(self, entry_id):
+    '''
+    Returns the full entry, including password, matching the specified
+    `entry_id`. Note that this may modify the underlying storage to
+    update the `lastused` field.
+    '''
+    raise NotImplementedError()
+
+  #----------------------------------------------------------------------------
+  def update(self, entry):
+    '''
+    Update all the attributes of the given `entry`.
+    '''
+    raise NotImplementedError()
+
+  #----------------------------------------------------------------------------
+  def modify(self, entry_id, **kw):
+    '''
+    Incremental version of :meth:`update`: instead of updating all
+    attributes of the entry to the specified values, this method only
+    updates the specified keywords. Returns True on success, or raises
+    an exception on failure.
+
+    Note: the default implementation assumes fast and sequential access
+    and reads the current version, updates the specified values, and
+    calls :meth:`update`.
+    '''
+    entry = self.read(entry_id)
+    for k, v in kw.items():
+      setattr(entry, k, v)
+    self.update(entry)
+    return True
+
+  #----------------------------------------------------------------------------
+  def delete(self, entry_id):
+    '''
+    Removes the entry identified by `entry_id` from this storage
+    engine.
+    '''
+    raise NotImplementedError()
+
+#------------------------------------------------------------------------------
+class ProxyStore(Store):
+
+  #----------------------------------------------------------------------------
+  def __init__(self, proxy=None, *args, **kw):
+    super(ProxyStore, self).__init__(*args, **kw)
+    self.proxy = proxy
+
+  #----------------------------------------------------------------------------
+  def create(self, *args, **kw):    return self.proxy.create(*args, **kw)
+  def read(self, *args, **kw):      return self.proxy.read(*args, **kw)
+  def update(self, *args, **kw):    return self.proxy.update(*args, **kw)
+  def modify(self, *args, **kw):    return self.proxy.modify(*args, **kw)
+  def delete(self, *args, **kw):    return self.proxy.delete(*args, **kw)
+  def find(self, *args, **kw):      return self.proxy.find(*args, **kw)
+
 
 #------------------------------------------------------------------------------
 # end of $Id$
