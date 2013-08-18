@@ -13,3 +13,5 @@
 
 - allow moving records between profiles
 
+- allow the CLI to search/list/etc from 'combined' view as well...
+
