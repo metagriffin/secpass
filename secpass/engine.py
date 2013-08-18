@@ -6,7 +6,7 @@
 # copy: (C) CopyLoose 2013 UberDev <hardcore@uberdev.org>, No Rights Reserved.
 #------------------------------------------------------------------------------
 
-import os, os.path, logging, ConfigParser
+import os, os.path, logging, ConfigParser, pkg_resources
 from . import api
 from .util import adict, asbool, resolve
 
@@ -105,6 +105,17 @@ class Engine(object):
     if not config.has_option('DEFAULT', 'profile.default') and firstprof:
       log.info('setting default profile to first found profile: %s', firstprof)
       config.set('DEFAULT', 'profile.default', firstprof)
+    # copy 'common', 'cli', and 'gui' sections into the config if missing
+    for section in ('common', 'cli', 'gui'):
+      if section not in config.sections():
+        defcfg = ConfigParser.RawConfigParser()
+        defcfg.optionxform = str
+        defcfg.readfp(pkg_resources.resource_stream('secpass', 'res/config.ini'))
+        config.add_section(section)
+        for key, val in defcfg.items(section):
+          if defcfg.has_option('DEFAULT', key) and defcfg.get('DEFAULT', key) == val:
+            continue
+          config.set(section, key, val)
     return config
 
   #----------------------------------------------------------------------------
