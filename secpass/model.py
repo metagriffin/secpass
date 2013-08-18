@@ -18,6 +18,7 @@ class Notifier(object):
   def off(self, eventmask=None, callback=None):
     raise NotImplementedError()
   def trigger(self, type, **kw):
+    kw['target'] = self
     for eventmask, callback in self.__dict__['observers']:
       if eventmask == type:
         callback(adict(type=type, **kw))
