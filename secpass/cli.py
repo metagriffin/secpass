@@ -6,12 +6,10 @@
 # copy: (C) CopyLoose 2013 UberDev <hardcore@uberdev.org>, No Rights Reserved.
 #------------------------------------------------------------------------------
 
-# TODO: i18n...
-
 import sys, os, os.path, logging, argparse, ConfigParser, math, getpass
 import pkg_resources
 from . import api, engine, util
-from .util import adict, zulu, localtime, resolvePath, asbool, resolve
+from .util import adict, zulu, localtime, resolvePath, asbool, resolve, _
 
 #------------------------------------------------------------------------------
 DEFAULT_SHOW_MAX    = 3
@@ -25,6 +23,7 @@ rootlog.addHandler(logging.StreamHandler())
 # TODO: add a logging formatter...
 
 #------------------------------------------------------------------------------
+# todo: i18n...
 basefmt  = '  {idx: >{wid}}. {record.role: <{rwid}} @ {record.service: <{swid}}'
 pwfmt    = basefmt + ' : {record.password}'
 creatfmt = basefmt + ' (created {created}, last used {lastused})'
@@ -52,13 +51,16 @@ class ProgramExit(Exception): pass
 def selectEntries(options, records, action):
   if len(records) <= 0:
     return []
-  lead = '{} entr{} matched:'.format(len(records), 'y' if len(records) == 1 else 'ies')
+  if len(records) == 1:
+    lead = _('1 entry matched:')
+  else:
+    lead = _('{} entries matched:', len(records))
   while True:
     print lead
     printEntries(options, records)
     try:
-      prompt = 'Which ones do you want {} ("all" [default], "none", or specific numbers)? '.format(
-        action)
+      prompt = _('Which ones do you want {action} ("all" [default], "none", or specific numbers)? ',
+                 action=action)
       choice = raw_input(prompt).strip().lower()
     except EOFError:
       print '^D'
@@ -66,34 +68,36 @@ def selectEntries(options, records, action):
     except KeyboardInterrupt:
       print ''
       raise ProgramExit(21)
-    if choice == 'none':
+    if choice == _('none'):
       return []
-    if choice in ('all', ''):
+    if choice in (_('all'), ''):
       break
     try:
       # todo: allow range specs, eg '1-4' or '1 through 4', etc.
       choice = [int(c) for c in choice.replace(',', ' ').split()]
     except ValueError:
-      lead = 'Hmm. I expected a number (or list thereof)... please try again:'
+      lead = _('Hmm. I expected a number (or list thereof)... please try again:')
       continue
     if len([c for c in choice if c < 1 or c > len(records)]) > 0:
-      lead = 'Hmm. I expected numbers between 1 and {}... please try again:' \
-        .format(len(records))
+      lead = _('Hmm. I expected numbers between 1 and {}... please try again:',
+               len(records))
       continue
     if len(choice) <= 0:
-      lead = 'Hmm. I expected at least one entry number... please try again:'
+      lead = _('Hmm. I expected at least one entry number... please try again:')
       continue
     records = [rec for idx, rec in enumerate(records) if idx + 1 in choice]
     break
   if len(records) <= 0:
     return []
-  lead = 'The following {} {} will be {}:'.format(
-    len(records), 'entry' if len(records) == 1 else 'entries', action)
+  lead = _('The following {count} {entry} will be {action}:',
+           count  = len(records),
+           entry  = _('entry') if len(records) == 1 else _('entries'),
+           action = action)
   while True:
     print lead
     printEntries(options, records)
     try:
-      choice = raw_input('Are you sure (y/N)? ').strip().lower()
+      choice = raw_input(_('Are you sure (y/N)? ')).strip().lower()
     except EOFError:
       print '^D'
       raise ProgramExit(20)
@@ -101,7 +105,7 @@ def selectEntries(options, records, action):
       print ''
       raise ProgramExit(21)
     if not asbool(choice):
-      print 'Operation aborted.'
+      print _('Operation aborted.')
       raise ProgramExit(22)
     break
   return records
@@ -125,12 +129,13 @@ def cmd_add(options, engine):
   matches = [e for e in engine.find()
              if e.service == options.service]# and e.role == options.role]
   if len(matches) > 0:
-    print 'The following entr{} {} similar:'.format(
-      'y' if len(matches) == 1 else 'ies',
-      'is' if len(matches) == 1 else 'are')
+    if len(matches) == 1:
+      print _('The following entry is similar:')
+    else:
+      print _('The following entries are similar:')
     printEntries(options, matches)
     try:
-      create = raw_input('Continue with entry creation (y/N)? ')
+      create = raw_input(_('Continue with entry creation (y/N)? '))
     except EOFError:
       print '^D'
       return 20
@@ -138,7 +143,7 @@ def cmd_add(options, engine):
       print ''
       return 21
     if not asbool(create):
-      print 'Operation aborted.'
+      print _('Operation aborted.')
       return 22
   try:
     display, newpass = getPassword(options)
@@ -152,8 +157,8 @@ def cmd_add(options, engine):
     service=options.service, role=options.role,
     password=newpass, notes=notes)
   if display:
-    print 'Setting password to "{entry.password}" for {entry.role} @ {entry.service}.'\
-      .format(entry=entry)
+    print _('Setting password to "{entry.password}" for {entry.role} @ {entry.service}.',
+            entry=entry)
   engine.create(entry)
   return 0
 
@@ -165,20 +170,20 @@ def cmd_get(options, engine):
   records = engine.find(options.search)
   if len(records) <= 0:
     if options.search:
-      print 'No entries matched "{}".'.format(options.search)
+      print _('No entries matched "{}".', options.search)
     else:
-      print 'No entries found.'
+      print _('No entries found.')
     return 0
   if len(records) > DEFAULT_SHOW_MAX:
     if options.search:
-      lead = 'Too many entries matched "{}":'.format(options.search)
+      lead = _('Too many entries matched "{}":', options.search)
     else:
-      lead = 'Too many entries:'
+      lead = _('Too many entries:')
     while True:
       print lead
       printEntries(options, records)
       try:
-        choice = raw_input('Your choice? ').strip()
+        choice = raw_input(_('Your choice? ')).strip()
       except EOFError:
         print '^D'
         return 20
@@ -188,16 +193,19 @@ def cmd_get(options, engine):
       try:
         idx = int(choice)
       except ValueError:
-        lead = 'Hmm. I expected a number... please try again:'
+        lead = _('Hmm. I expected a number... please try again:')
         continue
       if idx < 1 or idx > len(records):
-        lead = 'Hmm. I expected a number between 1 and {}... please try again:' \
-          .format(len(records))
+        lead = _('Hmm. I expected a number between 1 and {}... please try again:',
+                 len(records))
         continue
       records = [records[idx - 1]]
       break
   records = [engine.read(record.id) for record in records]
-  print 'Selected entr{}:'.format('y' if len(records) == 1 else 'ies')
+  if len(records) == 1:
+    print _('Selected entry:')
+  else:
+    print _('Selected entries:')
   printEntries(options, records, passwords=True)
   return 0
 
@@ -208,19 +216,19 @@ def cmd_set(options, engine):
   records = engine.find(options.search)
   if len(records) <= 0:
     if options.search:
-      print 'No entries matched "{}".'.format(options.search)
+      print _('No entries matched "{}".', options.search)
     else:
-      print 'No entries found.'
+      print _('No entries found.')
     return 0
   if not options.force:
-    records = selectEntries(options, records, 'modified')
+    records = selectEntries(options, records, _('modified'))
   if len(records) <= 0:
     return 0
   for record in records:
     try:
       display, newpass = getPassword(
-        options, 'New password for {entry.role} @ {entry.service}: '.format(
-          entry=record))
+        options, _('New password for {entry.role} @ {entry.service}: ',
+                   entry=record))
     except EOFError:
       print '^D'
       return 20
@@ -229,15 +237,17 @@ def cmd_set(options, engine):
       return 21
     record.password = newpass
     if display:
-      print 'Setting password to "{entry.password}" for {entry.role} @ {entry.service}.'\
-        .format(entry=record)
+      print _('Setting password to "{entry.password}" for {entry.role} @ {entry.service}.',
+              entry=record)
     if options.overwrite:
       notes = options.notes
     else:
       notes = '\n'.join([record.notes or '', options.notes or '']).strip()
     engine.update(record)
-  print '{} {} modified.'.format(
-    len(records), 'entry' if len(records) == 1 else 'entries')
+  if len(records) == 1:
+    print _('1 entry modified.')
+  else:
+    print _('{} entries modified.', len(records))
   return 0
 
 #------------------------------------------------------------------------------
@@ -247,18 +257,20 @@ def cmd_delete(options, engine):
   records = engine.find(options.search)
   if len(records) <= 0:
     if options.search:
-      print 'No entries matched "{}".'.format(options.search)
+      print _('No entries matched "{}".', options.search)
     else:
-      print 'No entries found.'
+      print _('No entries found.')
     return 0
   if not options.force:
-    records = selectEntries(options, records, 'deleted')
+    records = selectEntries(options, records, _('deleted'))
   if len(records) <= 0:
     return 0
   for record in records:
     engine.delete(record.id)
-  print '{} {} deleted.'.format(
-    len(records), 'entry' if len(records) == 1 else 'entries')
+  if len(records) == 1:
+    print _('1 entry deleted.')
+  else:
+    print _('{} entries deleted.', len(records))
   return 0
 
 #------------------------------------------------------------------------------
@@ -268,14 +280,14 @@ def cmd_list(options, engine):
   records = engine.find(options.search)
   if len(records) <= 0:
     if options.search:
-      print 'No entries matched "{}".'.format(options.search)
+      print _('No entries matched "{}".', options.search)
     else:
-      print 'No entries found.'
+      print _('No entries found.')
     return 0
   if options.search:
-    print 'Entries matching "{}":'.format(options.search or 'all')
+    print _('Entries matching "{}":', options.search)
   else:
-    print 'All entries:'
+    print _('All entries:')
   printEntries(options, records)
   return 0
 
@@ -313,8 +325,8 @@ def cmd_init(options):
   # USAGE: init [-h] [-f]
   if os.path.exists(options.config):
     if not options.force:
-      print >>sys.stderr, 'file "%s" exists -- use "--force" to overwrite' \
-        % (options.config,)
+      print >>sys.stderr, _('file "{}" exists -- use "--force" to overwrite',
+                            options.config)
       return 20
   cdir = os.path.dirname(options.config)
   if not os.path.isdir(cdir):
@@ -330,37 +342,38 @@ def main(argv=None):
 
   cli = argparse.ArgumentParser(
     #usage      = '%(prog)s [-h|--help] [OPTIONS] COMMAND [CMD-OPTIONS] ...',
-    description = 'Secure Passwords',
-    epilog      = '''
+    description = _('Secure Passwords'),
+    epilog      = _('''
       Whenever a PASSWORD option is accepted, you can specify either
       the literal password, "-", or nothing at all. The literal "-"
       will cause secpass to prompt for the password, which is much
       more secure than providing the password on the command line (and
       is therefore the recommended approach). If not specified or
       empty, it will be auto-generated (and displayed).
-      '''
+      ''')
     )
 
   cli.register('action', 'parsers', AliasedSubParsersAction)
 
   cli.add_argument(
-    '-v', '--verbose',
-    action='count', default=0,
-    help='increase verbosity (can be specified multiple times)')
+    _('-v'), _('--verbose'),
+    dest='verbose', action='count', default=0,
+    help=_('increase verbosity (can be specified multiple times)'))
 
   cli.add_argument(
-    '-c', '--config', metavar='FILENAME',
-    default=defconf,
-    help='configuration filename (default: "%(default)s")')
+    _('-c'), _('--config'), metavar=_('FILENAME'),
+    dest='config', default=defconf,
+    help=_('configuration filename (default: "{}")', '%(default)s'))
 
   cli.add_argument(
-    '-p', '--profile', metavar='PROFILE',
-    help='configuration profile id or name')
+    _('-p'), _('--profile'), metavar=_('PROFILE'),
+    dest='profile',
+    help=_('configuration profile id or name'))
 
   subcmds = cli.add_subparsers(
     dest='command',
-    title='Commands',
-    help='command (use "%(prog)s [COMMAND] --help" for details)')
+    title=_('Commands'),
+    help=_('command (use "{} [COMMAND] --help" for details)', '%(prog)s'))
 
   # TODO: re-enable the aliases... but first figure out how to
   #       eliminate the aliases from the list of available commands
@@ -368,105 +381,108 @@ def main(argv=None):
 
   # INIT command
   subcli = subcmds.add_parser(
-    'init', #aliases=('i', 'ini',),
-    help='create initial secpass configuration file')
+    _('init'), #aliases=('i', 'ini',),
+    help=_('create initial secpass configuration file'))
   subcli.add_argument(
-    '-f', '--force',
-    action='store_true',
-    help='force overwrite of existing configuration file')
+    _('-f'), _('--force'),
+    dest='force', action='store_true',
+    help=_('force overwrite of existing configuration file'))
   subcli.set_defaults(call=cmd_init)
 
   # ADD command
   subcli = subcmds.add_parser(
-    'add', #aliases=('a',),
-    help='add a new entry')
+    _('add'), #aliases=('a',),
+    help=_('add a new entry'))
   subcli.add_argument(
-    '-n', '--notes',
-    help='set the notes for the entry')
+    _('-n'), _('--notes'),
+    dest='notes',
+    help=_('set the notes for the entry'))
   subcli.add_argument(
-    'service', metavar='SERVICE',
-    help='service, domain, URL, or other identifier')
+    _('service'), metavar=_('SERVICE'),
+    help=_('service, domain, URL, or other identifier'))
   subcli.add_argument(
-    'role', metavar='ROLE',
-    help='role or username for the service')
+    _('role'), metavar=_('ROLE'),
+    help=_('role or username for the service'))
   subcli.add_argument(
-    'password', metavar='PASSWORD',
+    _('password'), metavar=_('PASSWORD'),
     nargs='?',
-    help='new password (if "-" it will be prompted for, if empty or' \
-         ' unspecified it will be auto-generated)')
+    help=_('new password (if "-" it will be prompted for, if empty or' \
+             ' unspecified it will be auto-generated)'))
   subcli.set_defaults(call=cmd_add)
 
   # SET command
   subcli = subcmds.add_parser(
-    'set', #aliases=('s', 'update', 'u', 'rotate', 'rot', 'rt'),
-    help='update/rotate an existing entry')
+    _('set'), #aliases=('s', 'update', 'u', 'rotate', 'rot', 'rt'),
+    help=_('update/rotate an existing entry'))
   subcli.add_argument(
-    '-r', '--regex',
-    action='store_true',
-    help='specifies that EXPR is a regular expression')
+    _('-r'), _('--regex'),
+    dest='regex', action='store_true',
+    help=_('specifies that EXPR is a regular expression'))
   subcli.add_argument(
-    '-f', '--force',
-    action='store_true',
-    help='update all matches without prompting for confirmation')
+    _('-f'), _('--force'),
+    dest='force', action='store_true',
+    help=_('update all matches without prompting for confirmation'))
   subcli.add_argument(
-    '-o', '--overwrite',
-    action='store_true',
-    help='replace the current notes instead of appending')
+    _('-o'), _('--overwrite'),
+    dest='overwrite', action='store_true',
+    help=_('replace the current notes instead of appending'))
   subcli.add_argument(
-    '-n', '--notes',
-    help='append to the current notes for the entry')
+    _('-n'), _('--notes'),
+    dest='notes',
+    help=_('append to the current notes for the entry'))
   subcli.add_argument(
-    'search', metavar='EXPR',
-    help='expression (list of keywords) to search for in the database')
+    _('search'), metavar=_('EXPR'),
+    help=_('expression (list of keywords) to search for in the database'))
   subcli.add_argument(
-    'password', metavar='PASSWORD',
+    _('password'), metavar=_('PASSWORD'),
     nargs='?',
-    help='new password (if "-" it will be prompted for, if empty or' \
-         ' unspecified it will be auto-generated)')
+    help=_('new password (if "-" it will be prompted for, if empty or'
+           ' unspecified it will be auto-generated)'))
   subcli.set_defaults(call=cmd_set)
 
   # GET command
   subcli = subcmds.add_parser(
-    'get', #aliases=('g', ),
-    help='retrieve a secure password')
+    _('get'), #aliases=('g', ),
+    help=_('retrieve a secure password'))
   subcli.add_argument(
-    '-r', '--regex',
-    action='store_true',
-    help='specifies that EXPR is a regular expression')
+    _('-r'), _('--regex'),
+    dest='regex', action='store_true',
+    help=_('specifies that EXPR is a regular expression'))
   subcli.add_argument(
-    'search', metavar='EXPR',
-    help='expression (list of keywords) to search for in the database')
+    _('search'), metavar=_('EXPR'),
+    help=_('expression (list of keywords) to search for in the database'))
   subcli.set_defaults(call=cmd_get)
 
   # DELETE command
   subcli = subcmds.add_parser(
-    'delete', #aliases=('del', 'd', 'remove', 'rem', 'rm'),
-    help='remove an entry')
+    _('delete'), #aliases=('del', 'd', 'remove', 'rem', 'rm'),
+    help=_('remove an entry'))
   subcli.add_argument(
-    '-r', '--regex',
-    action='store_true',
-    help='specifies that EXPR is a regular expression')
+    _('-r'), _('--regex'),
+    dest='regex', action='store_true',
+    help=_('specifies that EXPR is a regular expression'))
   subcli.add_argument(
-    '-f', '--force',
-    action='store_true',
-    help='delete all matches without prompting for confirmation')
+    _('-f'), _('--force'),
+    dest='force', action='store_true',
+    help=_('delete all matches without prompting for confirmation'))
   subcli.add_argument(
-    'search', metavar='EXPR',
-    help='expression (list of keywords) to search for in the database')
+    _('search'), metavar=_('EXPR'),
+    help=_('expression (list of keywords) to search for in the database'))
   subcli.set_defaults(call=cmd_delete)
 
   # LIST command
   subcli = subcmds.add_parser(
-    'list', #aliases=('ls', 'l', 'find', 'f', 'grep', 'search'),
-    help='search for an entry')
+    _('list'), #aliases=('ls', 'l', 'find', 'f', 'grep', 'search'),
+    help=_('search for an entry'))
   subcli.add_argument(
-    '-r', '--regex',
-    action='store_true',
-    help='specifies that EXPR is a regular expression')
+    _('-r'), _('--regex'),
+    dest='regex', action='store_true',
+    help=_('specifies that EXPR is a regular expression'))
   subcli.add_argument(
-    'search', metavar='EXPR',
+    _('search'), metavar=_('EXPR'),
     nargs='?',
-    help='expression (list of keywords) to search for in the database')
+    help=_('expression (list of keywords) to search for (if'
+           ' unspecified, lists all entries in the profile)'))
   subcli.set_defaults(call=cmd_list)
 
   options = cli.parse_args(args=argv)
@@ -481,8 +497,8 @@ def main(argv=None):
   if not os.path.isfile(options.config):
     if options.call is not cmd_init:
       cli.error(
-        'configuration "%s" does not exist -- use "%s init" to create it'
-        % (options.config, cli.prog))
+        _('configuration "{}" does not exist -- use "{prog} init" to create it',
+          options.config, prog=cli.prog))
     return options.call(options)
   if options.call is cmd_init:
     return options.call(options)
@@ -495,7 +511,7 @@ def main(argv=None):
   try:
     options.profile = options.engine.getProfile(options.profile)
   except KeyError:
-    cli.error('profile "%s" not found' % (options.profile,))
+    cli.error(_('profile "{}" not found', options.profile))
 
   try:
     return options.call(options, options.profile)
