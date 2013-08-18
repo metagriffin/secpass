@@ -7,7 +7,7 @@ Secure Passwords
   2013/08/16: `Secure Passwords` (package ``secpass``) is currently
   under active development, i.e. it is not ready for use. Unless you
   like living on the edge, of course. So, until further notice,
-  secpass is explicitly in "beta", functionally incomplete, and you
+  SecPass is explicitly in "beta", functionally incomplete, and you
   should only use it if you make lots of backups and don't mind losing
   data. Cheers!
 
