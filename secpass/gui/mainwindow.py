@@ -197,7 +197,7 @@ class MainWindow(object):
       service  = _('New service'),
       role     = _('New role'),
       password = util.generatePassword(profile.settings))).asdict())
-    self.elview.AddObject(entry)
+    self.addEntry(entry)
     self.elview.SelectObject(entry, deselectOthers=True, ensureVisible=True)
     self.elview.StartCellEdit(self.elview.GetIndexOf(entry),
                               1 if self.elcols[0] is self.elpcol else 0)
@@ -283,7 +283,7 @@ class MainWindow(object):
     for pid in profiles:
       profile = self.app.engine.getProfile(pid)
       for entry in profile.find():
-        self.elview.AddObject(model.Entry(pid=pid, **entry.asdict()))
+        self.addEntry(model.Entry(pid=pid, **entry.asdict()))
     # note: this *should* be redundant, but under certain conditions
     # OLV does not work /quite/ right... so forcing a re-size.
     self.elview.AutoSizeColumns()
@@ -291,6 +291,19 @@ class MainWindow(object):
     self.updateToolbarTools()
     return self
 
+  #----------------------------------------------------------------------------
+  def addEntry(self, entry):
+    entry.on('change', self.entryChanged)
+    self.elview.AddObject(entry)
+
+  #----------------------------------------------------------------------------
+  def entryChanged(self, event):
+    # TODO: there had been a terrible typo here... for some reason, wx
+    #       completely squelched that. figure out how to raise that up a bit.
+    # TODO: spawn this off into a different thread.
+    #       ==> NOTE that means that i need to then track `dirty` state...
+    self.app.engine.getProfile(event.target.pid).modify(
+      event.target.id, **{event.key: event.value})
 
 #------------------------------------------------------------------------------
 # end of $Id$
