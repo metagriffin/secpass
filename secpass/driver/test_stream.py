@@ -103,6 +103,32 @@ more notes"
     self.assertGreater(out[3][4], out[2][4])
 
   #----------------------------------------------------------------------------
+  def test_modify(self):
+    driver = BufferDriver()
+    driver.create(api.Entry(
+      service='testservice', role='testrole', password='testpass', notes='testnotes'))
+    eid = list(driver.find())[0].id
+    driver.modify(eid, service='new-testservice')
+    chk = '''\
+"id","seq","created","updated","lastused","deleted","service","role","password","notes"
+:UUID:$ID1,0,:~NOW,:~NOW,:~NOW,,"testservice","testrole","testpass","testnotes"
+:=ID1,1,:~NOW,:~NOW,:~NOW,,"new-testservice","testrole","testpass","testnotes"
+'''
+    self.assertSecPassCsvEqual(driver.value, chk)
+    out = list(csv.reader(StringIO(driver.value)))
+    chk = list(csv.reader(StringIO(chk)))
+    # check id
+    self.assertEqual(out[1][0], out[2][0])
+    # check seq
+    self.assertGreater(out[2][1], out[1][1])
+    # check created
+    self.assertEqual(out[1][2], out[2][2])
+    # check updated
+    self.assertGreater(out[2][3], out[1][3])
+    # check lastused
+    self.assertGreater(out[2][4], out[1][4])
+
+  #----------------------------------------------------------------------------
   def test_delete(self):
     driver = BufferDriver()
     driver.create(api.Entry(
