@@ -10,3 +10,6 @@
       causes the selection to change
     - ?? should trigger a `wx.EVT_LIST_ITEM_DESELECTED` when a SetObjects
       causes the selection to change
+
+- allow moving records between profiles
+
