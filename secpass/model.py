@@ -31,34 +31,38 @@ class PubDict(Notifier):
       self.__setattr__(key, val)
   def __getattr__(self, key):
     return self.__dict__['data'].get(key, None)
-  def __setattr__(self, key, value):
+  def __setattr__(self, key, value, trigger=True):
     if key not in self.__dict__['data']:
       self.__dict__['data'][key] = value
-      self.trigger('change', key=key, value=value)
+      if trigger:
+        self.trigger('change', key=key, value=value)
       return
     orig = self.__dict__['data'].get(key, None)
     self.__dict__['data'][key] = value
-    if orig != value:
+    if orig != value and trigger:
       self.trigger('change', key=key, value=value, previous=orig)
-  def __delattr__(self, key):
+  def __delattr__(self, key, trigger=True):
     if key not in self.__dict__['data']:
       return
     orig = self.__dict__['data'].pop(key)
-    self.trigger('change', key=key, previous=orig)
+    if trigger:
+      self.trigger('change', key=key, previous=orig)
 
 #------------------------------------------------------------------------------
 class PubList(Notifier):
   def __init__(self, *args, **kw):
     super(PubList, self).__init__(*args, **kw)
     self.list = []
-  def __delslice__(self, start, end):
+  def __delslice__(self, start, end, trigger=True):
     rem = self.list.__getslice__(start, end)
     self.list.__delslice__(start, end)
-    for item in rem:
-      self.trigger('remove', item=item)
-  def append(self, item):
+    if trigger:
+      for item in rem:
+        self.trigger('remove', item=item)
+  def append(self, item, trigger=True):
     self.list.append(item)
-    self.trigger('add', item=item)
+    if trigger:
+      self.trigger('add', item=item)
   def __getitem__(self, *args, **kw):
     return self.list.__getitem__(*args, **kw)
   def __getslice__(self, *args, **kw):
