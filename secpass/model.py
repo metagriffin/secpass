@@ -33,6 +33,17 @@ class PubDict(Notifier):
   def __getattr__(self, key):
     return self.__dict__['data'].get(key, None)
   def __setattr__(self, key, value, trigger=True):
+
+    # TODO: this is *terrible*... the problem is that the GUI is given
+    #       the value '-' when the password is not available... thus if
+    #       the user makes a no-change change (ie. double clicks on the
+    #       password but does not change it, then we effectively set the
+    #       password to '-', which is clearly NOT the intended effect).
+    if key == 'password' and value == '-' and \
+        self.__dict__['data'].get(key, None) is None:
+      return
+    # /TODO
+
     if key not in self.__dict__['data']:
       self.__dict__['data'][key] = value
       if trigger:
@@ -75,7 +86,9 @@ class EntryList(PubList):
 
 #------------------------------------------------------------------------------
 class Entry(PubDict):
-  pass
+  def __repr__(self):
+    return '<secpass.model.Entry %r>' % ({
+      k: v for k, v in self.__dict__.items() if k != 'password'})
 
 #------------------------------------------------------------------------------
 # end of $Id$
