@@ -53,20 +53,33 @@
       <object class="tool" name="tool.update">
         <bitmap>update-24x24.png</bitmap>
         <tooltip>Edit selected entry</tooltip>
-        <longhelp>Edit selected entry</longhelp>
+        <longhelp>Edit selected entry in a dialog</longhelp>
         <label>Edit selected entry</label>
       </object>
       <object class="tool" name="tool.rotate">
         <bitmap>rotate-24x24.png</bitmap>
         <tooltip>Rotate selected entries</tooltip>
-        <longhelp>Rotate selected entries</longhelp>
+        <longhelp>Rotate the selected entries' passwords</longhelp>
         <label>Rotate selected entries</label>
+      </object>
+      <object class="separator"/>
+      <object class="tool" name="tool.show">
+        <bitmap>icon-show-24x24.png</bitmap>
+        <tooltip>Show selected passwords</tooltip>
+        <longhelp>Show selected entries' passwords</longhelp>
+        <label>Show selected passwords</label>
+      </object>
+      <object class="tool" name="tool.hide">
+        <bitmap>icon-hide-24x24.png</bitmap>
+        <tooltip>Hide selected passwords</tooltip>
+        <longhelp>Hide the selected entries' passwords</longhelp>
+        <label>Hide selected passwords</label>
       </object>
       <object class="tool" name="tool.copy">
         <bitmap stock_id="wxART_PASTE"/>
-        <tooltip>Copy selected entry's password to the clipboard</tooltip>
+        <tooltip>Copy selected password to the clipboard</tooltip>
         <longhelp>Copy selected entry's password to the clipboard</longhelp>
-        <label>Copy selected entry's password to the clipboard</label>
+        <label>Copy password to clipboard</label>
       </object>
       <object class="separator"/>
       <object class="tool" name="tool.delete">
