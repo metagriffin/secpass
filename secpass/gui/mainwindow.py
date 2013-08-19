@@ -13,12 +13,16 @@ from wx import xrc
 import ObjectListView as OLV
 
 from secpass import model, api, util
-from secpass.util import adict, _
+from secpass.util import adict, asbool, _
 
 # todo: make the status line display the number of selected and/or
 #       unselected entries
 
 # todo: remember column sorting preference...
+
+# todo: add control sequences to the tools, eg:
+#         Ctrl-S => show passwords
+#         Ctrl-H => hide passwords
 
 #------------------------------------------------------------------------------
 class NotesEditor():
@@ -69,6 +73,8 @@ class MainWindow(object):
       edit   = self.toolbar.FindById(xrc.XRCID('tool.update')),
       rotate = self.toolbar.FindById(xrc.XRCID('tool.rotate')),
       pwcopy = self.toolbar.FindById(xrc.XRCID('tool.copy')),
+      show   = self.toolbar.FindById(xrc.XRCID('tool.show')),
+      hide   = self.toolbar.FindById(xrc.XRCID('tool.hide')),
       delete = self.toolbar.FindById(xrc.XRCID('tool.delete')),
       )
     self.frame.Bind(wx.EVT_MENU, self.app.OnQuit, id=wx.ID_EXIT)
@@ -81,6 +87,8 @@ class MainWindow(object):
     self.toolbar.Bind(wx.EVT_TOOL, self.OnEntriesUpdate, id=self.tools.edit.Id)
     self.toolbar.Bind(wx.EVT_TOOL, self.OnEntriesRotate, id=self.tools.rotate.Id)
     self.toolbar.Bind(wx.EVT_TOOL, self.OnEntryCopy, id=self.tools.pwcopy.Id)
+    self.toolbar.Bind(wx.EVT_TOOL, self.OnEntriesShow, id=self.tools.show.Id)
+    self.toolbar.Bind(wx.EVT_TOOL, self.OnEntriesHide, id=self.tools.hide.Id)
     self.toolbar.Bind(wx.EVT_TOOL, self.OnEntriesDelete, id=self.tools.delete.Id)
     # todo: find out why the 'about' menuitem doesn't use the standard icon...
     # todo: load window size from preferences...
@@ -108,10 +116,17 @@ class MainWindow(object):
                                  isEditable=False,
                                  )
     self.elocols = [
-      OLV.ColumnDefn(_('Service'),  valueGetter='service',  minimumWidth=10, isSpaceFilling=True),
-      OLV.ColumnDefn(_('Role'),     valueGetter='role',     minimumWidth=10, isSpaceFilling=True),
-      OLV.ColumnDefn(_('Password'), valueGetter='password', minimumWidth=10, isSpaceFilling=True),
-      OLV.ColumnDefn(_('Notes'),    valueGetter='notes',    minimumWidth=10, isSpaceFilling=True,
+      OLV.ColumnDefn(_('Service'), minimumWidth=10, isSpaceFilling=True,
+                     valueGetter=lambda e: e.service or _('-'), valueSetter='service',
+                     ),
+      OLV.ColumnDefn(_('Role'), minimumWidth=10, isSpaceFilling=True,
+                     valueGetter=lambda e: e.role or _('-'), valueSetter='role',
+                     ),
+      OLV.ColumnDefn(_('Password'), minimumWidth=10, isSpaceFilling=True,
+                     valueGetter=lambda e: e.password or _('-'), valueSetter='password',
+                     ),
+      OLV.ColumnDefn(_('Notes'), minimumWidth=10, isSpaceFilling=True,
+                     valueGetter=lambda e: e.notes or _('-'), valueSetter='notes',
                      #cellEditorCreator=self.notesEditor
                      ),
       ]
@@ -209,13 +224,60 @@ class MainWindow(object):
 
   #----------------------------------------------------------------------------
   def OnEntriesRotate(self, e):
-    # TODO: implement
-    return self.app.NIY('Entry rotation')
+    # TODO: open a 'confirm' message box...
+    with self.status(_('Rotating passwords...')):
+      entries = self.elview.GetSelectedObjects()
+      for entry in entries:
+        entry.password = util.generatePassword(
+          self.app.engine.getProfile(entry.pid).settings)
+        self.elview.RefreshObject(entry)
+    self.updateToolbarTools()
 
   #----------------------------------------------------------------------------
   def OnEntryCopy(self, e):
-    # TODO: implement
-    return self.app.NIY('Copy-password-to-clipboard')
+    with self.status(_('Fetching passwords and copying to clipboard...')):
+      entry = self.elview.GetSelectedObjects()[0]
+      data  = entry.password
+      if data is None:
+        data = self.app.engine.getProfile(entry.pid).read(entry.id).password
+      clip = wx.TextDataObject()
+      clip.SetText(data)
+      if wx.TheClipboard.IsOpened():
+        return wx.MessageBox(_(
+          'The clipboard is currently locked by another application'
+          ' -- try again later or shut down the other application.'))
+      wx.TheClipboard.Open()
+      if asbool(self.app.getConfig('gui', 'clipboard.normal', 'true')):
+        wx.TheClipboard.UsePrimarySelection(False)
+        wx.TheClipboard.SetData(clip)
+      if asbool(self.app.getConfig('gui', 'clipboard.primary', 'true')):
+        wx.TheClipboard.UsePrimarySelection(True)
+        wx.TheClipboard.SetData(clip)
+      wx.TheClipboard.Close()
+
+  #----------------------------------------------------------------------------
+  def OnEntriesShow(self, e):
+    with self.status(_('Fetching passwords...')):
+      entries = self.elview.GetSelectedObjects()
+      for entry in entries:
+        if entry.password is not None:
+          continue
+        # TODO: ASYNC...
+        entry.__setattr__(
+          'password',
+          self.app.engine.getProfile(entry.pid).read(entry.id).password,
+          trigger=False)
+        self.elview.RefreshObject(entry)
+    self.updateToolbarTools()
+
+  #----------------------------------------------------------------------------
+  def OnEntriesHide(self, e):
+    with self.status(_('Hiding passwords...')):
+      entries = self.elview.GetSelectedObjects()
+      for entry in entries:
+        entry.__delattr__('password', trigger=False)
+        self.elview.RefreshObject(entry)
+    self.updateToolbarTools()
 
   #----------------------------------------------------------------------------
   def OnEntriesDelete(self, e):
@@ -234,12 +296,16 @@ class MainWindow(object):
 
   #----------------------------------------------------------------------------
   def updateToolbarTools(self):
-    sel = len(self.elview.GetSelectedObjects())
+    sel = self.elview.GetSelectedObjects()
+    sellen = len(sel)
     self.toolbar.EnableTool(self.tools.create.Id, len(self.app.engine.profiles) > 0)
-    self.toolbar.EnableTool(self.tools.delete.Id, sel > 0)
-    self.toolbar.EnableTool(self.tools.rotate.Id, sel > 0)
-    self.toolbar.EnableTool(self.tools.edit.Id, sel == 1)
-    self.toolbar.EnableTool(self.tools.pwcopy.Id, sel == 1)
+    self.toolbar.EnableTool(self.tools.delete.Id, sellen > 0)
+    self.toolbar.EnableTool(self.tools.rotate.Id, sellen > 0)
+    self.toolbar.EnableTool(self.tools.edit.Id, sellen == 1)
+    self.toolbar.EnableTool(self.tools.pwcopy.Id, sellen == 1)
+    vis = [e for e in sel if e.password is not None]
+    self.toolbar.EnableTool(self.tools.show.Id, sellen - len(vis) > 0)
+    self.toolbar.EnableTool(self.tools.hide.Id, len(vis) > 0)
 
   #----------------------------------------------------------------------------
   def OnProfileSwitch(self, e):
