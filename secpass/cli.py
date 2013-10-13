@@ -353,6 +353,9 @@ def main(argv=None):
       ''')
     )
 
+  # TODO: move to using parents
+  #         http://docs.python.org/2/library/argparse.html#parents
+
   cli.register('action', 'parsers', AliasedSubParsersAction)
 
   cli.add_argument(
