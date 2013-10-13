@@ -6,8 +6,15 @@
 # copy: (C) CopyLoose 2013 UberDev <hardcore@uberdev.org>, No Rights Reserved.
 #------------------------------------------------------------------------------
 
+from isstr import isstr
+
 #------------------------------------------------------------------------------
 def resolve(spec):
+  if not isstr(spec):
+    return spec
+  if ':' in spec:
+    spec, attr = spec.split(':', 1)
+    return getattr(resolve(spec), attr)
   spec = spec.split('.')
   used = spec.pop(0)
   found = __import__(used)
