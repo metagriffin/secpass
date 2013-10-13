@@ -58,7 +58,7 @@ setup(
     # TODO
     ],
   author                = 'metagriffin',
-  author_email          = 'metagriffin@uberdev.org',
+  author_email          = 'mg.pypi@uberdev.org',
   url                   = 'http://github.com/metagriffin/secpass',
   keywords              = 'secure password manager',
   packages              = find_packages(),
