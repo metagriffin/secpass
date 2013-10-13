@@ -236,13 +236,17 @@ def cmd_set(options, engine):
       print '^C'
       return 21
     record.password = newpass
-    if display:
-      print _('Setting password to "{entry.password}" for {entry.role} @ {entry.service}.',
-              entry=record)
     if options.overwrite:
       notes = options.notes
     else:
       notes = '\n'.join([record.notes or '', options.notes or '']).strip()
+    if options.service is not None:
+      record.service = options.service
+    if options.role is not None:
+      record.role = options.role
+    if display:
+      print _('Setting password to "{entry.password}" for {entry.role} @ {entry.service}.',
+              entry=record)
     engine.update(record)
   if len(records) == 1:
     print _('1 entry modified.')
@@ -433,6 +437,14 @@ def main(argv=None):
     _('-n'), _('--notes'),
     dest='notes',
     help=_('append to the current notes for the entry'))
+  subcli.add_argument(
+    _('-s'), _('--service'),
+    dest='service',
+    help=_('update the entry\'s service (e.g. domain, URL, etc)'))
+  subcli.add_argument(
+    _('-R'), _('--role'),
+    dest='role',
+    help=_('update the entry\'s role (e.g. username)'))
   subcli.add_argument(
     _('search'), metavar=_('EXPR'),
     help=_('expression (list of keywords) to search for in the database'))
