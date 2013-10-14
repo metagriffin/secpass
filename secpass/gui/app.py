@@ -84,8 +84,8 @@ class SecPassGui(wx.App):
   #----------------------------------------------------------------------------
   def NIY(self, func):
     # TODO: remove this
-    wx.MessageBox(_('{} not implemented yet.', func),
-                  'Error', wx.OK|wx.ICON_ERROR)
+    wx.MessageBox(
+      _('{} not implemented yet.', func), 'Error', wx.OK|wx.ICON_ERROR)
 
   #----------------------------------------------------------------------------
   def OnCheckUpdate(self, e):
