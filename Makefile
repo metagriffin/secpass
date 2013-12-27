@@ -1,5 +1,5 @@
-test:
-	nosetests --verbose
+PKGNAME = secpass
+include Makefile.python
 
 images:
 	inkscape --without-gui --export-area=0:0:1000:1000 --export-width=128 \
@@ -24,22 +24,22 @@ images:
 	  asset/icons-toolbar.gen-show.svg --export-png=secpass/gui/res/icon-show-24x24.png
 	rm -f asset/icons-toolbar.gen-*.svg
 
+# TODO: improve this and move it into Makefile.python...
 download:
 	cat setup.py | tr -d ' ' | tr '>' '=' | egrep "^[\"']\S+==\S+[\"'],$$" \
 	  | sed -re "s/^[\"'](\S+)[>=]=(\S+)[\"'],$$/\1==\2/" \
 	  | grep -v wxPython \
 	  | xargs pip install --download-dir=lib
 
-upload:
-	python setup.py sdist upload
 
-# TODO: extract version from setup.py...
+# TODO: improve this and move it into Makefile.python...
+# TODO: extract authors, version, etc from setup.py...
 pot:
 	find secpass -iname '*.py' \
 	  | xargs xgettext \
             --language Python \
-            --copyright-holder 'UberDev' \
+            --copyright-holder 'metagriffin' \
             --package-name secpass \
-            --package-version 0.1.0 \
-            --msgid-bugs-address metagriffin@uberdev.org \
+            --package-version `cat VERSION.txt` \
+            --msgid-bugs-address mg.github@metagriffin.net \
             --output -
