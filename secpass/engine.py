@@ -113,8 +113,7 @@ class Engine(object):
     if not config.has_option('DEFAULT', 'profile.default') and firstprof:
       log.info('setting default profile to first found profile: %s', firstprof)
       config.set('DEFAULT', 'profile.default', firstprof)
-    # copy 'common', 'cli', and 'gui' sections into the config if missing
-    for section in ('common', 'cli', 'gui'):
+    for section in ('common',):
       if section not in config.sections():
         defcfg = ConfigParser.RawConfigParser()
         defcfg.optionxform = str

@@ -41,19 +41,11 @@ dependencies = [
   'distribute           >= 0.6.24',
   'argparse             >= 1.2.1',
   'python-gnupg         >= 0.3.3',
-
-  # TODO: how to require these only if secpass-gui is wanted?...
-  # todo: if linux, require wxPython >= 2.9.4.1
-  # TODO: upgrade to 2.9.5.0?
-  # TODO: break secpass-gui into separate package.
-  'wxPython             >= 2.9.4.0',
-  'ObjectListView       >= 1.2dev',
 ]
 
 entrypoints = {
   'console_scripts': [
     'secpass            = secpass.cli:main',
-    'secpass-gui        = secpass.gui:main',
   ],
 }
 
@@ -79,7 +71,7 @@ setup(
   author                = 'metagriffin',
   author_email          = 'mg.pypi@metagriffin.net',
   url                   = 'http://github.com/metagriffin/secpass',
-  keywords              = 'secure password manager',
+  keywords              = 'secure password manager command line library',
   packages              = find_packages(),
   platforms             = ['any'],
   namespace_packages    = ['secpass', 'secpass.driver'],
