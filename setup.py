@@ -20,23 +20,24 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #------------------------------------------------------------------------------
 
-import os, sys, re
+import os, sys, setuptools
 from setuptools import setup, find_packages
 
 # require python 2.7+
-assert(sys.version_info[0] > 2
-       or sys.version_info[0] == 2
-       and sys.version_info[1] >= 7)
+if sys.hexversion < 0x02070000:
+  raise RuntimeError('This package requires python 2.7 or better')
 
-here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.rst')).read()
+heredir = os.path.abspath(os.path.dirname(__file__))
+def read(*parts, **kw):
+  try:    return open(os.path.join(heredir, *parts)).read()
+  except: return kw.get('default', '')
 
-test_requires = [
+test_dependencies = [
   'nose                 >= 1.3.0',
   'coverage             >= 3.5.3',
 ]
 
-requires = [
+dependencies = [
   'distribute           >= 0.6.24',
   'argparse             >= 1.2.1',
   'python-gnupg         >= 0.3.3',
@@ -60,30 +61,32 @@ classifiers = [
   'Development Status :: 4 - Beta',
   #'Development Status :: 5 - Production/Stable',
   'Environment :: Console',
-  'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
   'Natural Language :: English',
   'Operating System :: OS Independent',
   'Programming Language :: Python',
+  'Intended Audience :: End Users/Desktop',
   'Topic :: Utilities',
-  # TODO
+  'Topic :: Security',
+  'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
 ]
 
 setup(
   name                  = 'secpass',
-  version               = '0.1.1',
+  version               = read('VERSION.txt', default='0.0.1').strip(),
   description           = 'Secure Passwords',
-  long_description      = README,
+  long_description      = read('README.rst'),
   classifiers           = classifiers,
   author                = 'metagriffin',
-  author_email          = 'mg.pypi@uberdev.org',
+  author_email          = 'mg.pypi@metagriffin.net',
   url                   = 'http://github.com/metagriffin/secpass',
   keywords              = 'secure password manager',
   packages              = find_packages(),
+  platforms             = ['any'],
   namespace_packages    = ['secpass', 'secpass.driver'],
   include_package_data  = True,
   zip_safe              = False,
-  install_requires      = requires,
-  tests_require         = test_requires,
+  install_requires      = dependencies,
+  tests_require         = test_dependencies,
   test_suite            = 'secpass',
   entry_points          = entrypoints,
   license               = 'GPLv3+',
