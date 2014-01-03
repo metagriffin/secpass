@@ -21,8 +21,9 @@
 
 import unittest, tempfile, os, csv, shutil
 from StringIO import StringIO
+from aadict import aadict
+
 from secpass import api
-from secpass.util import adict
 from secpass.driver import file
 from secpass.test_helpers import TestSecPassHelper
 
@@ -34,7 +35,7 @@ class TestFileDriver(TestSecPassHelper):
     tdir = tempfile.mkdtemp(prefix='test-smp-driver-file.')
     path = os.path.join(tdir, 'data.csv')
     self.assertFalse(os.path.exists(path))
-    driver = file.FileDriver(adict(path=path))
+    driver = file.FileDriver(aadict(path=path))
     self.assertEqual(len(list(driver.find())), 0)
     self.assertFalse(os.path.exists(path))
     driver.create(api.Entry(

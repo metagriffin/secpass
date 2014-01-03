@@ -20,9 +20,7 @@
 #------------------------------------------------------------------------------
 
 import os, re, time, random, base64, gettext
-from .adict import adict
-from .resolve import resolve
-from .glob2re import glob2re
+import morph
 
 #------------------------------------------------------------------------------
 DEFAULT_GENERATOR_MIN = 24
@@ -36,26 +34,25 @@ def _(msgid, *args, **kw):
   return gettext.gettext(msgid)
 
 #------------------------------------------------------------------------------
-def resolvePath(name, rel=None):
-
-  # TODO: use:
-  #  - os.path.expanduser
-  #  - os.path.expandvars
-  #  - os.path.relpath
-
-  # todo: this is pretty simplistic...
-  return name.replace('~', os.environ.get('HOME', ''))
+def resolveVars(expr):
+  # note: this implementation allows recursive expansion BUT at the expense
+  #       of not being able to escape an expansion....
+  # todo: it would be nice to support both escaping and recursive expansion
+  #       (note that default shell expansion is NOT recursive)
+  while True:
+    expr2 = os.path.expandvars(expr)
+    if expr2 == expr:
+      return expr2
+    expr = expr2
 
 #------------------------------------------------------------------------------
-truthy = frozenset(('t', 'true', 'y', 'yes', 'on', '1'))
-def asbool(s):
-  # shamelessly scrubbed from pyramid.settings:asbool
-  if s is None:
-    return False
-  if isinstance(s, bool):
-    return s
-  s = str(s).strip()
-  return s.lower() in truthy
+def resolvePath(path, reldir=None):
+  path = os.path.expanduser(path)
+  path = resolveVars(path)
+  # TODO: use os.path.relpath?...
+  if reldir is not None and not path.startswith('/'):
+    path = os.path.join(reldir, path)
+  return path
 
 #------------------------------------------------------------------------------
 def zulu(ts=None, ms=True):
@@ -88,24 +85,11 @@ def generatePassword(config):
   seq = ''
   for i in range(glen):
     seq += chr(random.randint(0, 255))
-  if asbool(config.get('generator.hex', DEFAULT_GENERATOR_HEX)):
+  if morph.tobool(config.get('generator.hex', DEFAULT_GENERATOR_HEX)):
     seq = seq.encode('hex')[:glen]
   else:
     seq = base64.b64encode(seq, 'Fh')[:glen]
   return seq
-
-#------------------------------------------------------------------------------
-def pick(src, *keys):
-  '''
-  Given a dict and iterable of keys, return a dict containing
-  only those keys.
-  '''
-  if not src: # pragma: no cover
-    return dict()
-  try:
-    return {k: v for k, v in src.items() if k in keys}
-  except AttributeError:
-    return {k: getattr(src, k) for k in keys if hasattr(src, k)}
 
 #------------------------------------------------------------------------------
 # end of $Id$

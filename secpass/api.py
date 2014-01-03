@@ -19,7 +19,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #------------------------------------------------------------------------------
 
-from .util import pick
+import morph
 
 #------------------------------------------------------------------------------
 class LimitExceeded(Exception): pass
@@ -60,7 +60,7 @@ class Entry(object):
 
   #----------------------------------------------------------------------------
   def update(self, *args, **kw):
-    for k, v in pick(dict(*args, **kw), *self.ATTRIBUTES).items():
+    for k, v in morph.pick(dict(*args, **kw), *self.ATTRIBUTES).items():
       setattr(self, k, v)
     return self
 

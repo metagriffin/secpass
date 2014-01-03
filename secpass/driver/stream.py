@@ -23,8 +23,9 @@
 #       (to limit file size blow-up)
 
 import time, uuid, csv, re, copy
+import globre
+
 from secpass import api
-from secpass.util import glob2re, pick
 
 #------------------------------------------------------------------------------
 class StreamEntry(api.Entry):
@@ -133,7 +134,7 @@ class AbstractStreamDriver(api.Store):
     elif expr.startswith('regex:'):
       expr = re.compile(expr[6:], flags=re.IGNORECASE)
     else:
-      expr = re.compile(glob2re(expr), flags=re.IGNORECASE)
+      expr = globre.compile(expr, flags=re.IGNORECASE)
     ret = []
     for entry in self.getEntries():
       if not expr or self._matches(entry, expr):

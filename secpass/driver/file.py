@@ -22,9 +22,10 @@
 import os
 from StringIO import StringIO
 from contextlib import contextmanager
+from aadict import aadict
+
 from . import stream
 from .stream import AbstractStreamDriver
-from secpass.util import adict
 
 #------------------------------------------------------------------------------
 DEFAULT_PATH = '~/.config/secpass/data.csv'
@@ -33,7 +34,7 @@ DEFAULT_PATH = '~/.config/secpass/data.csv'
 class FileDriver(AbstractStreamDriver):
 
   PARAMS = stream.AbstractStreamDriver.PARAMS + (
-    adict(name='path', type='path', default=DEFAULT_PATH),
+    aadict(name='path', type='path', default=DEFAULT_PATH),
     )
 
   #----------------------------------------------------------------------------

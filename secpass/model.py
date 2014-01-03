@@ -19,7 +19,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #------------------------------------------------------------------------------
 
-from .adict import adict
+from aadict import aadict
 
 #------------------------------------------------------------------------------
 class Notifier(object):
@@ -34,7 +34,7 @@ class Notifier(object):
     kw['target'] = self
     for eventmask, callback in self.__dict__['observers']:
       if eventmask == type:
-        callback(adict(type=type, **kw))
+        callback(aadict(type=type, **kw))
 
 #------------------------------------------------------------------------------
 class PubDict(Notifier):

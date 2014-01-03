@@ -25,9 +25,10 @@ import os, copy
 from StringIO import StringIO
 from contextlib import contextmanager
 import gnupg
+from aadict import aadict
+
 from . import file
 from .file import FileDriver
-from secpass.util import adict
 
 #------------------------------------------------------------------------------
 DEFAULT_PATH = file.DEFAULT_PATH + '.gpg'
@@ -46,8 +47,8 @@ def newdefpath(params):
 class GpgFileDriver(FileDriver):
 
   PARAMS = newdefpath(file.FileDriver.PARAMS) + (
-    adict(name='agent', type='bool', default=True),
-    adict(name='identity', type='str', default=None),
+    aadict(name='agent', type='bool', default=True),
+    aadict(name='identity', type='str', default=None),
     )
 
   #----------------------------------------------------------------------------

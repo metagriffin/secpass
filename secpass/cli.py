@@ -21,8 +21,10 @@
 
 import sys, os, os.path, logging, argparse, ConfigParser, math, getpass
 import pkg_resources
+import morph
+
 from . import api, engine, util
-from .util import adict, zulu, localtime, resolvePath, asbool, resolve, _
+from .util import zulu, localtime, resolvePath, _
 
 #------------------------------------------------------------------------------
 DEFAULT_SHOW_MAX    = 3
@@ -117,7 +119,7 @@ def selectEntries(options, records, action):
     except KeyboardInterrupt:
       print ''
       raise ProgramExit(21)
-    if not asbool(choice):
+    if not morph.tobool(choice):
       print _('Operation aborted.')
       raise ProgramExit(22)
     break
@@ -155,7 +157,7 @@ def cmd_add(options, engine):
     except KeyboardInterrupt:
       print ''
       return 21
-    if not asbool(create):
+    if not morph.tobool(create):
       print _('Operation aborted.')
       return 22
   try:

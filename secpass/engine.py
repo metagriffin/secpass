@@ -20,8 +20,11 @@
 #------------------------------------------------------------------------------
 
 import os, os.path, logging, ConfigParser, pkg_resources
-from . import api
-from .util import adict, asbool, resolve
+from aadict import aadict
+import morph
+import asset
+
+from . import api, util
 
 # TODO: add support for encrypting parts of the configuration file...
 # todo: with the current `Profile` settings approach, you cannot specify
@@ -57,8 +60,8 @@ class Profile(api.ProxyStore):
 
   #----------------------------------------------------------------------------
   def _loadDriver(self):
-    driver = resolve(self.settings.get('driver', api.DEFAULT_DRIVER))
-    params = adict()
+    driver = asset.symbol(self.settings.get('driver', api.DEFAULT_DRIVER))
+    params = aadict()
     for param in getattr(driver, 'PARAMS', []):
       if 'driver.' + param.name not in self.settings:
         if 'default' in param:
@@ -69,7 +72,7 @@ class Profile(api.ProxyStore):
           % (param.name, self.id))
       val = self.settings['driver.' + param.name]
       if param.type == 'bool':
-        params[param.name] = asbool(self.engine.resolveVars(val))
+        params[param.name] = morph.tobool(self.engine.resolveVars(val))
       elif param.type == 'path':
         params[param.name] = self.engine.resolvePath(val)
       else:
@@ -105,7 +108,7 @@ class Engine(object):
     for section in config.sections():
       if not section.startswith('profile.'):
         continue
-      pconf = adict(config.items(section))
+      pconf = aadict(config.items(section))
       pid   = section[8:]
       self.profiles[pid] = Profile(self, pid, pconf)
       if not firstprof:
@@ -127,18 +130,11 @@ class Engine(object):
 
   #----------------------------------------------------------------------------
   def resolvePath(self, path):
-    path = os.path.expanduser(path)
-    path = self.resolveVars(path)
-    if not path.startswith('/'):
-      path = os.path.join(os.path.dirname(self.cpath), path)
-    return path
+    return util.resolvePath(path, reldir=os.path.dirname(self.cpath))
 
   #----------------------------------------------------------------------------
   def resolveVars(self, val):
-    while True:
-      val2 = os.path.expandvars(val)
-      if val2 == val:
-        return val2
+    return util.resolveVars(val)
 
 #------------------------------------------------------------------------------
 # end of $Id$
