@@ -5,13 +5,4 @@
 
 - create a multi-entry-edit mode
 
-- ObjectListView:
-    - should trigger a `wx.EVT_LIST_ITEM_DESELECTED` when a SetFilter
-      causes the selection to change
-    - ?? should trigger a `wx.EVT_LIST_ITEM_DESELECTED` when a SetObjects
-      causes the selection to change
-
 - allow moving records between profiles
-
-- allow the CLI to search/list/etc from 'combined' view as well...
-
