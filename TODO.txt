@@ -1,3 +1,5 @@
+- use FSO to test CLI
+
 - allow password generator configurations have cascading defaults:
     1. profile-specific values
     2. user-specific default values
