@@ -357,7 +357,25 @@ def main(argv=None):
 
   defconf = os.environ.get('SECPASS_CONFIG', api.DEFAULT_CONFIG)
 
+  common = argparse.ArgumentParser(add_help=False)
+
+  common.add_argument(
+    _('-v'), _('--verbose'),
+    dest='verbose', action='count', default=0,
+    help=_('increase verbosity (can be specified multiple times)'))
+
+  common.add_argument(
+    _('-c'), _('--config'), metavar=_('FILENAME'),
+    dest='config', default=defconf,
+    help=_('configuration filename (current default: "{}")', '%(default)s'))
+
+  common.add_argument(
+    _('-p'), _('--profile'), metavar=_('PROFILE'),
+    dest='profile',
+    help=_('configuration profile id or name'))
+
   cli = argparse.ArgumentParser(
+    parents     = [common],
     #usage      = '%(prog)s [-h|--help] [OPTIONS] COMMAND [CMD-OPTIONS] ...',
     description = _('Secure Passwords'),
     epilog      = _('''
@@ -375,21 +393,6 @@ def main(argv=None):
 
   cli.register('action', 'parsers', AliasedSubParsersAction)
 
-  cli.add_argument(
-    _('-v'), _('--verbose'),
-    dest='verbose', action='count', default=0,
-    help=_('increase verbosity (can be specified multiple times)'))
-
-  cli.add_argument(
-    _('-c'), _('--config'), metavar=_('FILENAME'),
-    dest='config', default=defconf,
-    help=_('configuration filename (default: "{}")', '%(default)s'))
-
-  cli.add_argument(
-    _('-p'), _('--profile'), metavar=_('PROFILE'),
-    dest='profile',
-    help=_('configuration profile id or name'))
-
   subcmds = cli.add_subparsers(
     dest='command',
     title=_('Commands'),
@@ -402,6 +405,7 @@ def main(argv=None):
   # INIT command
   subcli = subcmds.add_parser(
     _('init'), #aliases=('i', 'ini',),
+    parents=[common],
     help=_('create initial secpass configuration file'))
   subcli.add_argument(
     _('-f'), _('--force'),
@@ -412,6 +416,7 @@ def main(argv=None):
   # ADD command
   subcli = subcmds.add_parser(
     _('add'), #aliases=('a',),
+    parents=[common],
     help=_('add a new entry'))
   subcli.add_argument(
     _('-n'), _('--notes'),
@@ -433,6 +438,7 @@ def main(argv=None):
   # SET command
   subcli = subcmds.add_parser(
     _('set'), #aliases=('s', 'update', 'u', 'rotate', 'rot', 'rt'),
+    parents=[common],
     help=_('update/rotate an existing entry'))
   subcli.add_argument(
     _('-r'), _('--regex'),
@@ -471,6 +477,7 @@ def main(argv=None):
   # GET command
   subcli = subcmds.add_parser(
     _('get'), #aliases=('g', ),
+    parents=[common],
     help=_('retrieve a secure password'))
   subcli.add_argument(
     _('-r'), _('--regex'),
@@ -484,6 +491,7 @@ def main(argv=None):
   # DELETE command
   subcli = subcmds.add_parser(
     _('delete'), #aliases=('del', 'd', 'remove', 'rem', 'rm'),
+    parents=[common],
     help=_('remove an entry'))
   subcli.add_argument(
     _('-r'), _('--regex'),
@@ -501,6 +509,7 @@ def main(argv=None):
   # LIST command
   subcli = subcmds.add_parser(
     _('list'), #aliases=('ls', 'l', 'find', 'f', 'grep', 'search'),
+    parents=[common],
     help=_('search for an entry'))
   subcli.add_argument(
     _('-r'), _('--regex'),
