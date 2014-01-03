@@ -41,6 +41,11 @@ dependencies = [
   'distribute           >= 0.6.24',
   'argparse             >= 1.2.1',
   'python-gnupg         >= 0.3.3',
+  'six                  >= 1.4.1',
+  'asset                >= 0.0.5',
+  'morph                >= 0.1.1',
+  'aadict               >= 0.2.1',
+  'globre               >= 0.1.2',
 ]
 
 entrypoints = {
