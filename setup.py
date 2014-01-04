@@ -35,6 +35,7 @@ def read(*parts, **kw):
 test_dependencies = [
   'nose                 >= 1.3.0',
   'coverage             >= 3.5.3',
+  'fso                  >= 0.1.5',
 ]
 
 dependencies = [
@@ -46,6 +47,7 @@ dependencies = [
   'morph                >= 0.1.1',
   'aadict               >= 0.2.1',
   'globre               >= 0.1.2',
+  'requests             >= 2.1.0',
 ]
 
 entrypoints = {
