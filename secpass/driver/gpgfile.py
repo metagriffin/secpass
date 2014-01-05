@@ -29,6 +29,7 @@ from aadict import aadict
 
 from . import file
 from .file import FileDriver
+from secpass.util import _
 
 #------------------------------------------------------------------------------
 DEFAULT_PATH = file.DEFAULT_PATH + '.gpg'
@@ -74,8 +75,8 @@ class GpgFileDriver(FileDriver):
   def openDecryptStream(self, fp):
     crypt = self.gpg.decrypt_file(fp)
     if not crypt.ok:
-      raise DecryptionError('is identity "%s" loaded in your GPG agent?'
-                            % (self.rcpt,))
+      raise DecryptionError(
+        _('Is identity "{}" loaded in your GPG agent?', self.rcpt,))
     yield StringIO(str(crypt))
 
   #----------------------------------------------------------------------------
@@ -89,8 +90,8 @@ class GpgFileDriver(FileDriver):
     buf = buf.getvalue()
     crypt = self.gpg.encrypt(buf, self.rcpt)
     if not crypt.ok:
-      raise EncryptionError('is identity "%s" loaded in your GPG agent?'
-                            % (self.rcpt,))
+      raise EncryptionError(
+        _('Is identity "{}" loaded in your GPG agent?', self.rcpt))
     encbuf = str(crypt)
     # do a round-trip decryption to ensure that no data was lost...
     with self.openDecryptStream(StringIO(encbuf)) as fp:
