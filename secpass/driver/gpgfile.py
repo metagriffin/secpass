@@ -48,8 +48,8 @@ def newdefpath(params):
 class GpgFileDriver(FileDriver):
 
   PARAMS = newdefpath(file.FileDriver.PARAMS) + (
-    aadict(name='agent', type='bool', default=True),
-    aadict(name='identity', type='str', default=None),
+    aadict(label=_('Use GPG agent'), name='agent', type='bool', default=True),
+    aadict(label=_('Identity'), name='identity', type='str', default=None),
     )
 
   #----------------------------------------------------------------------------
