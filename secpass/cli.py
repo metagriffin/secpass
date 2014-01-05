@@ -180,18 +180,17 @@ def cmd_add(options, engine):
 #------------------------------------------------------------------------------
 def cmd_get(options, engine):
   # USAGE: get [-h] [-r] EXPR
-  # todo: check options.regex
   # todo: catch LimitExceeded
-  records = engine.find(options.search)
+  records = engine.find(options.query)
   if len(records) <= 0:
-    if options.search:
-      print _('No entries matched "{}".', options.search)
+    if options.query:
+      print _('No entries matched "{}".', options.query.split(':', 1)[1])
     else:
       print _('No entries found.')
     return 0
   if len(records) > DEFAULT_SHOW_MAX:
-    if options.search:
-      lead = _('Too many entries matched "{}":', options.search)
+    if options.query:
+      lead = _('Too many entries matched "{}":', options.query.split(':', 1)[1])
     else:
       lead = _('Too many entries:')
     while True:
@@ -227,11 +226,10 @@ def cmd_get(options, engine):
 #------------------------------------------------------------------------------
 def cmd_set(options, engine):
   # USAGE: set [-h] [-r] [-f] [-o] [-n NOTES] EXPR [PASSWORD]
-  # todo: check options.regex
-  records = engine.find(options.search)
+  records = engine.find(options.query)
   if len(records) <= 0:
-    if options.search:
-      print _('No entries matched "{}".', options.search)
+    if options.query:
+      print _('No entries matched "{}".', options.query.split(':', 1)[1])
     else:
       print _('No entries found.')
     return 0
@@ -272,11 +270,10 @@ def cmd_set(options, engine):
 #------------------------------------------------------------------------------
 def cmd_delete(options, engine):
   # USAGE: delete [-h] [-r] [-f] EXPR
-  # todo: check options.regex
-  records = engine.find(options.search)
+  records = engine.find(options.query)
   if len(records) <= 0:
-    if options.search:
-      print _('No entries matched "{}".', options.search)
+    if options.query:
+      print _('No entries matched "{}".', options.query.split(':', 1)[1])
     else:
       print _('No entries found.')
     return 0
@@ -295,16 +292,15 @@ def cmd_delete(options, engine):
 #------------------------------------------------------------------------------
 def cmd_list(options, engine):
   # USAGE: list [-h] [-r] [EXPR]
-  # todo: check options.regex
-  records = engine.find(options.search)
+  records = engine.find(options.query)
   if len(records) <= 0:
-    if options.search:
-      print _('No entries matched "{}".', options.search)
+    if options.query:
+      print _('No entries matched "{}".', options.query.split(':', 1)[1])
     else:
       print _('No entries found.')
     return 0
-  if options.search:
-    print _('Entries matching "{}":', options.search)
+  if options.query:
+    print _('Entries matching "{}":', options.query.split(':', 1)[1])
   else:
     print _('All entries:')
   printEntries(options, records)
@@ -376,6 +372,12 @@ def main(argv=None):
     dest='profile',
     help=_('configuration profile id or name'))
 
+  common.add_argument(
+    _('-r'), _('--regex'),
+    dest='regex', action='store_true',
+    help=_('specifies that any EXPR is a regular expression (the default'
+           ' is to use natural-language evaluation)'))
+
   cli = argparse.ArgumentParser(
     parents     = [common],
     #usage      = '%(prog)s [-h|--help] [OPTIONS] COMMAND [CMD-OPTIONS] ...',
@@ -389,9 +391,6 @@ def main(argv=None):
       empty, it will be auto-generated (and displayed).
       ''')
     )
-
-  # TODO: move to using parents
-  #         http://docs.python.org/2/library/argparse.html#parents
 
   cli.register('action', 'parsers', AliasedSubParsersAction)
 
@@ -443,10 +442,6 @@ def main(argv=None):
     parents=[common],
     help=_('update/rotate an existing entry'))
   subcli.add_argument(
-    _('-r'), _('--regex'),
-    dest='regex', action='store_true',
-    help=_('specifies that EXPR is a regular expression'))
-  subcli.add_argument(
     _('-f'), _('--force'),
     dest='force', action='store_true',
     help=_('update all matches without prompting for confirmation'))
@@ -467,7 +462,7 @@ def main(argv=None):
     dest='role',
     help=_('update the entry\'s role (e.g. username)'))
   subcli.add_argument(
-    _('search'), metavar=_('EXPR'),
+    _('query'), metavar=_('EXPR'),
     help=_('expression (list of keywords) to search for in the database'))
   subcli.add_argument(
     _('password'), metavar=_('PASSWORD'),
@@ -482,11 +477,7 @@ def main(argv=None):
     parents=[common],
     help=_('retrieve a secure password'))
   subcli.add_argument(
-    _('-r'), _('--regex'),
-    dest='regex', action='store_true',
-    help=_('specifies that EXPR is a regular expression'))
-  subcli.add_argument(
-    _('search'), metavar=_('EXPR'),
+    _('query'), metavar=_('EXPR'),
     help=_('expression (list of keywords) to search for in the database'))
   subcli.set_defaults(call=cmd_get)
 
@@ -496,29 +487,22 @@ def main(argv=None):
     parents=[common],
     help=_('remove an entry'))
   subcli.add_argument(
-    _('-r'), _('--regex'),
-    dest='regex', action='store_true',
-    help=_('specifies that EXPR is a regular expression'))
-  subcli.add_argument(
     _('-f'), _('--force'),
     dest='force', action='store_true',
     help=_('delete all matches without prompting for confirmation'))
   subcli.add_argument(
-    _('search'), metavar=_('EXPR'),
+    _('query'), metavar=_('EXPR'),
     help=_('expression (list of keywords) to search for in the database'))
   subcli.set_defaults(call=cmd_delete)
 
   # LIST command
+  # todo: if `grep` is used, assume regex=true
   subcli = subcmds.add_parser(
-    _('list'), #aliases=('ls', 'l', 'find', 'f', 'grep', 'search'),
+    _('list'), #aliases=('ls', 'l', 'find', 'f', 'grep', 'search', 'query'),
     parents=[common],
     help=_('search for an entry'))
   subcli.add_argument(
-    _('-r'), _('--regex'),
-    dest='regex', action='store_true',
-    help=_('specifies that EXPR is a regular expression'))
-  subcli.add_argument(
-    _('search'), metavar=_('EXPR'),
+    _('query'), metavar=_('EXPR'),
     nargs='?',
     help=_('expression (list of keywords) to search for (if'
            ' unspecified, lists all entries in the profile)'))
@@ -553,9 +537,18 @@ def main(argv=None):
     cli.error(_('profile "{}" not found', options.profile))
 
   try:
+    if getattr(options, 'query', False):
+      options.query = ( 'regex:' if options.regex else 'query:') \
+        + options.query
     return options.call(options, options.profile)
-  except ProgramExit as e:
-    return e.message
+  except ProgramExit as err:
+    return err.message
+  except api.Error as err:
+    log.debug(
+      'failed during execution of %s:', options.call.__name__, exc_info=True)
+    print >>sys.stderr, '[**] ERROR: {}: {}'.format(
+      err.__class__.__name__, err.message)
+    return 100
 
 #------------------------------------------------------------------------------
 # end of $Id$
