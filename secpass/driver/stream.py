@@ -28,15 +28,21 @@ import globre
 from secpass import api
 
 #------------------------------------------------------------------------------
+def parseFloat(value):
+  if value in (None, ''):
+    return None
+  return float(value)
+
+#------------------------------------------------------------------------------
 class StreamEntry(api.Entry):
   def __init__(self,
                created=None, updated=None, lastused=None, deleted=None,
                **kw):
     super(StreamEntry, self).__init__(**kw)
-    self.created  = None if created == '' or created is None else float(created)
-    self.updated  = None if updated == '' or updated is None else float(updated)
-    self.lastused = None if lastused == '' or lastused is None else float(lastused)
-    self.deleted  = None if deleted == '' or deleted is None else float(deleted)
+    self.created  = parseFloat(created)
+    self.updated  = parseFloat(updated)
+    self.lastused = parseFloat(lastused)
+    self.deleted  = parseFloat(deleted)
   def clearPassword(self):
     self.password = None
     return self
@@ -129,25 +135,28 @@ class AbstractStreamDriver(api.Store):
 
   #----------------------------------------------------------------------------
   def find(self, expr=None):
+    # todo: use pylucene?...
     if not expr:
       expr = None
     elif expr.startswith('regex:'):
       expr = re.compile(expr[6:], flags=re.IGNORECASE)
     else:
+      if expr.startswith('query:'):
+        expr = expr[6:]
+      # todo: is this really the best natural language evaluation?...
       expr = globre.compile(expr, flags=re.IGNORECASE)
-    ret = []
-    for entry in self.getEntries():
-      if not expr or self._matches(entry, expr):
-        ret.append(entry)
-        # if len(ret) > api.DEFAULT_LIST_MAX:
-        #   raise api.LimitExceeded('too many matches')
-    # todo: order the results by best match
+    ret = self.getEntries()
+    if expr:
+      # todo: order the results by best match
+      ret = [entry for entry in ret if self._matches(entry, expr)]
     return [r.clearPassword() for r in ret]
 
   #----------------------------------------------------------------------------
   def _matches(self, entry, expr):
-    # todo: compare notes too?
-    return expr.search(entry.service or '') or expr.search(entry.role or '')
+    return (
+      expr.search(entry.service or '')
+      or expr.search(entry.role or '')
+      or expr.search(entry.notes or ''))
 
   #----------------------------------------------------------------------------
   def getEntries(self):

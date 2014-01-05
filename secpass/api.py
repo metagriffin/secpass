@@ -22,9 +22,11 @@
 import morph
 
 #------------------------------------------------------------------------------
-class LimitExceeded(Exception): pass
-class EntryNotFound(Exception): pass
-class IntegrityError(Exception): pass
+class Error(Exception): pass
+class DriverError(Error): pass
+class LimitExceeded(Error): pass
+class EntryNotFound(Error): pass
+class IntegrityError(Error): pass
 
 #------------------------------------------------------------------------------
 DEFAULT_CONFIG          = '~/.config/secpass/config.ini'
@@ -90,8 +92,26 @@ class Store(object):
     '''
     Returns a list of all entries (with passwords removed) in this
     Store that match the specified search expression `expr`. If `expr`
-    is None or empty, all entries are returned. If the password for
-    a given entry is required, use :meth:`read`.
+    is None or empty, all entries are returned. The returned entries
+    must not include the password, and may not include other fields,
+    such as the notes.
+
+    :Parameters:
+
+    expr : str, optional, default: null
+
+      The search expression, which may optionally be prefixed with one
+      of the following values to indicate special processing:
+
+      * ``'regex:'``: the rest of the string is taken to be a regular
+        expression.
+
+      * ``'query:'``: the rest of the string is taken to be a
+        natural-language search expression. This is the default
+        processing mode.
+
+      If none of the above specified known prefixes is found, it is
+      evaluated as if it had prefixed with ``'query:'``.
     '''
     raise NotImplementedError()
 
