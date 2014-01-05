@@ -91,7 +91,8 @@ class Driver(api.Store, AuthBase):
     aadict(label=_('Public key'), name='publickey', type='str'),
     aadict(label=_('Private key (PGP-encrypted)'), name='privatekey', type='pgp(str)'),
     aadict(label=_('Nonce tracker'), name='nonce', type='path', default=None),
-    aadict(label=_('Peer database'), name='peers', type='path', default='%(__name__)s.peers.db'),
+    ## todo: ensure that these defaults are evaluated within a ConfigParser context...
+    aadict(label=_('Peer database'), name='peerdb', type='path', default='%(__name__)s.peers.db'),
   )
 
   FIELDS = ('id', 'seq', 'created', 'updated', 'lastused', 'deleted') \
@@ -106,7 +107,7 @@ class Driver(api.Store, AuthBase):
     #       decrypted on the fly whenever the password is needed. for
     #       that reason, it is highly recommended to use gpg-agent!...
     self.password   = config.password
-    self.peers      = morph.tolist(config.peers)
+    self.peerdb     = config.peerdb
     self.publickey  = config.publickey
     self.privatekey = config.privatekey
     self.nonce      = config.nonce
@@ -117,56 +118,70 @@ class Driver(api.Store, AuthBase):
       assert res.count == 1
       self.fingerprint = res.fingerprints[0]
 
+    # TODO: load this from self.peerdb...
+    self.peerfps = [self.fingerprint]
+    self.peerkeys = [self.publickey]
+
+    # TODO: get `use_agent` from the config....
+    self.gpg  = gnupg.GPG(use_agent=True)
+
   #----------------------------------------------------------------------------
   def getPassword(self):
-    # TODO: decrypt
-    return self.password
+    data = self.gpg.decrypt(self.password)
+    if not data.ok:
+      raise api.DriverError(
+        _('Could not decrypt password - is your GPG agent configured correctly?'))
+    return data.data
 
   #----------------------------------------------------------------------------
   def getPrivateKey(self):
-    # TODO: decrypt
-    return self.privatekey
+    data = self.gpg.decrypt(self.privatekey)
+    if not data.ok:
+      raise api.DriverError(
+        _('Could not encrypt password - is your GPG agent configured correctly?'))
+    return data.data
 
   #----------------------------------------------------------------------------
-  def decryptEntryValue(self, data):
+  def decrypt(self, data):
     if data is None:
       return data
-
-    ###########################################################################
-    ###########################################################################
-    ###########################################################################
-    # TODO: decrypt
-    ###########################################################################
-    ###########################################################################
-    ###########################################################################
-
-    return data
+    with GpgEnv() as genv:
+      # todo: check return...
+      res  = genv.gpg.import_keys(self.getPrivateKey())
+      # TODO: do key referencing...
+      data = genv.gpg.decrypt(data)
+      if not data.ok:
+        # todo: extract error information....
+        raise api.DriverError(
+          _('Could not decrypt data - has this client been added to the vault?'))
+      return data.data
 
   #----------------------------------------------------------------------------
-  def encryptEntryValue(self, data):
+  def encrypt(self, data):
     if data is None:
       return data
-
-    ###########################################################################
-    ###########################################################################
-    ###########################################################################
-    # TODO: encrypt
-    ###########################################################################
-    ###########################################################################
-    ###########################################################################
-
-    return data
+    with GpgEnv() as genv:
+      for key in self.peerkeys:
+        # todo: check return...
+        res  = genv.gpg.import_keys(key)
+      # TODO: do key referencing...
+      data = genv.gpg.encrypt(data, self.peerfps, always_trust=True, armor=True)
+      if not data.ok:
+        # todo: extract error information...
+        raise api.DriverError(
+          _('Could not encrypt data - has this client been added to the vault?'))
+      return data.data
 
   #----------------------------------------------------------------------------
   def j2e(self, data):
     entry = Entry.fromJson(data)
-    entry.password = self.decryptEntryValue(entry.password)
+    entry.password = self.decrypt(entry.password)
     return entry
 
   #----------------------------------------------------------------------------
   def e2j(self, entry):
     data = morph.pick(entry, *api.Entry.ATTRIBUTES)
-    data['password'] = self.encryptEntryValue(data.get('password'))
+    data['password'] = self.encrypt(data.get('password'))
     return data
 
   #----------------------------------------------------------------------------
@@ -183,7 +198,7 @@ class Driver(api.Store, AuthBase):
         cur = 0
       if not autoincrement:
         return cur
-      cur += 100
+      cur += 1
       fp.seek(0)
       fp.write(str(cur) + '\n')
     return cur
