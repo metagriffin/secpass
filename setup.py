@@ -52,7 +52,7 @@ dependencies = [
 
 entrypoints = {
   'console_scripts': [
-    'secpass            = secpass.cli:main',
+    'secpass            = secpass.cli.pass:main',
   ],
 }
 

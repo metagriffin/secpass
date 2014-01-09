@@ -23,8 +23,8 @@ import sys, os, os.path, logging, argparse, ConfigParser, math, getpass
 import pkg_resources
 import morph
 
-from . import api, engine, util
-from .util import zulu, localtime, resolvePath, _
+from .. import api, engine, util
+from ..util import zulu, localtime, resolvePath, _
 
 #------------------------------------------------------------------------------
 DEFAULT_SHOW_MAX    = 3
@@ -36,6 +36,7 @@ rootlog = logging.getLogger()
 rootlog.setLevel(logging.WARNING)
 rootlog.addHandler(logging.StreamHandler())
 # TODO: add a logging formatter...
+# TODO: configure logging from config.ini?...
 
 #------------------------------------------------------------------------------
 # todo: i18n...
