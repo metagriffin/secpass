@@ -3,6 +3,13 @@ ChangeLog
 =========
 
 
+v0.3
+====
+
+* Added support for SecPass Broker Protocol 1.0 (without notes or management)
+* Converted to use external libraries for utilities
+
+
 v0.2
 ====
 
