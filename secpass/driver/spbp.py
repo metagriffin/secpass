@@ -334,9 +334,8 @@ class Driver(api.Driver):
   #----------------------------------------------------------------------------
   def __init__(self, *args, **kw):
     super(Driver, self).__init__(*args, **kw)
-    self.features.secnote = True
-    self.features.secpass = True
-    self.features.sync    = True
+    self.features.secnote = 1
+    self.features.secpass = 1
     self.params += (
       aadict(
         label=_('Server URL'), name='url', type='str',

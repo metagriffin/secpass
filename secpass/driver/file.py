@@ -66,7 +66,7 @@ class Driver(AbstractStreamDriver):
   #----------------------------------------------------------------------------
   def __init__(self, *args, **kw):
     super(Driver, self).__init__(*args, **kw)
-    self.features.secpass = True
+    self.features.secpass = 1
     self.params += (
       aadict(name='path', type='path', default=DEFAULT_PATH),
     )
