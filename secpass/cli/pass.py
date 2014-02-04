@@ -19,24 +19,25 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #------------------------------------------------------------------------------
 
-import sys, os, os.path, logging, argparse, ConfigParser, math, getpass
-import pkg_resources
+import sys
+import os
+import logging
+import argparse
+import math
+import getpass
 import morph
 
-from .. import api, engine, util
-from ..util import zulu, localtime, resolvePath, _
+from .. import api, util
+from ..util import zulu, localtime, _
+from .base import ProgramExit, AliasedSubParsersAction, makeCommonOptions, \
+  ask, confirm, run
+from .config import addConfigCommand
 
 #------------------------------------------------------------------------------
 DEFAULT_SHOW_MAX    = 3
-DEFAULT_CONFIG_DATA = pkg_resources.resource_string('secpass', 'res/config.ini')
 
 #------------------------------------------------------------------------------
 log = logging.getLogger(__name__)
-rootlog = logging.getLogger()
-rootlog.setLevel(logging.WARNING)
-rootlog.addHandler(logging.StreamHandler())
-# TODO: add a logging formatter...
-# TODO: configure logging from config.ini?...
 
 #------------------------------------------------------------------------------
 # todo: i18n...
@@ -61,9 +62,6 @@ def printEntries(options, records, passwords=False):
                      )
 
 #------------------------------------------------------------------------------
-class ProgramExit(Exception): pass
-
-#------------------------------------------------------------------------------
 def selectEntries(options, records, action):
   if len(records) <= 0:
     return []
@@ -74,16 +72,9 @@ def selectEntries(options, records, action):
   while True:
     print lead
     printEntries(options, records)
-    try:
-      prompt = _('Which ones do you want {action} ("all" [default], "none", or specific numbers)? ',
-                 action=action)
-      choice = raw_input(prompt).strip().lower()
-    except EOFError:
-      print '^D'
-      raise ProgramExit(20)
-    except KeyboardInterrupt:
-      print ''
-      raise ProgramExit(21)
+    choice = ask(
+      _('Which ones do you want {action} ("all" [default], "none", or specific numbers)? ',
+        action=action))
     if choice == _('none'):
       return []
     if choice in (_('all'), ''):
@@ -109,21 +100,9 @@ def selectEntries(options, records, action):
            count  = len(records),
            entry  = _('entry') if len(records) == 1 else _('entries'),
            action = action)
-  while True:
-    print lead
-    printEntries(options, records)
-    try:
-      choice = raw_input(_('Are you sure (y/N)? ')).strip().lower()
-    except EOFError:
-      print '^D'
-      raise ProgramExit(20)
-    except KeyboardInterrupt:
-      print ''
-      raise ProgramExit(21)
-    if not morph.tobool(choice):
-      print _('Operation aborted.')
-      raise ProgramExit(22)
-    break
+  print lead
+  printEntries(options, records)
+  confirm(_('Are you sure (y/N)? '), exit=True)
   return records
 
 #------------------------------------------------------------------------------
@@ -150,25 +129,15 @@ def cmd_add(options, engine):
     else:
       print _('The following entries are similar:')
     printEntries(options, matches)
-    try:
-      create = raw_input(_('Continue with entry creation (y/N)? '))
-    except EOFError:
-      print '^D'
-      return 20
-    except KeyboardInterrupt:
-      print ''
-      return 21
-    if not morph.tobool(create):
-      print _('Operation aborted.')
-      return 22
+    confirm(_('Continue with entry creation (y/N)? '), exit=True)
   try:
     display, newpass = getPassword(options)
   except EOFError:
     print '^D'
-    return 20
+    raise ProgramExit(20)
   except KeyboardInterrupt:
     print '^C'
-    return 21
+    raise ProgramExit(21)
   entry = api.Entry(
     service=options.service, role=options.role,
     password=newpass, notes=notes)
@@ -197,14 +166,7 @@ def cmd_get(options, engine):
     while True:
       print lead
       printEntries(options, records)
-      try:
-        choice = raw_input(_('Your choice? ')).strip()
-      except EOFError:
-        print '^D'
-        return 20
-      except KeyboardInterrupt:
-        print ''
-        return 21
+      choice = ask(_('Your choice? '))
       try:
         idx = int(choice)
       except ValueError:
@@ -245,10 +207,10 @@ def cmd_set(options, engine):
                    entry=record))
     except EOFError:
       print '^D'
-      return 20
+      raise ProgramExit(20)
     except KeyboardInterrupt:
       print '^C'
-      return 21
+      raise ProgramExit(21)
     record.password = newpass
     if options.overwrite:
       notes = options.notes
@@ -270,7 +232,7 @@ def cmd_set(options, engine):
 
 #------------------------------------------------------------------------------
 def cmd_delete(options, engine):
-  # USAGE: delete [-h] [-r] [-f] EXPR
+  # USAGE: delete [-f] EXPR
   records = engine.find(options.query)
   if len(records) <= 0:
     if options.query:
@@ -308,50 +270,6 @@ def cmd_list(options, engine):
   return 0
 
 #------------------------------------------------------------------------------
-# command aliasing, shamelessly scrubbed from:
-#   https://gist.github.com/sampsyo/471779
-class AliasedSubParsersAction(argparse._SubParsersAction):
-  class _AliasedPseudoAction(argparse.Action):
-    def __init__(self, name, aliases, help):
-      dest = name
-      if aliases:
-        dest += ' (%s)' % ','.join(aliases)
-      sup = super(AliasedSubParsersAction._AliasedPseudoAction, self)
-      sup.__init__(option_strings=[], dest=dest, help=help)
-  def add_parser(self, name, **kwargs):
-    if 'aliases' in kwargs:
-      aliases = kwargs['aliases']
-      del kwargs['aliases']
-    else:
-      aliases = []
-    parser = super(AliasedSubParsersAction, self).add_parser(name, **kwargs)
-    # Make the aliases work.
-    for alias in aliases:
-      self._name_parser_map[alias] = parser
-    # Make the help text reflect them, first removing old help entry.
-    if 'help' in kwargs:
-      help = kwargs.pop('help')
-      self._choices_actions.pop()
-      pseudo_action = self._AliasedPseudoAction(name, aliases, help)
-      self._choices_actions.append(pseudo_action)
-    return parser
-
-#------------------------------------------------------------------------------
-def cmd_init(options):
-  # USAGE: init [-h] [-f]
-  if os.path.exists(options.config):
-    if not options.force:
-      print >>sys.stderr, _('file "{}" exists -- use "--force" to overwrite',
-                            options.config)
-      return 20
-  cdir = os.path.dirname(options.config)
-  if not os.path.isdir(cdir):
-    os.makedirs(cdir)
-  with open(options.config, 'wb') as fp:
-    fp.write(DEFAULT_CONFIG_DATA)
-  return 0
-
-#------------------------------------------------------------------------------
 def main(argv=None):
 
   defconf = os.environ.get('SECPASS_CONFIG', api.DEFAULT_CONFIG)
@@ -381,8 +299,7 @@ def main(argv=None):
 
   cli = argparse.ArgumentParser(
     parents     = [common],
-    #usage      = '%(prog)s [-h|--help] [OPTIONS] COMMAND [CMD-OPTIONS] ...',
-    description = _('Secure Passwords'),
+    description = _('Secure password generation, management, and storage'),
     epilog      = _('''
       Whenever a PASSWORD option is accepted, you can specify either
       the literal password, "-", or nothing at all. The literal "-"
@@ -400,20 +317,15 @@ def main(argv=None):
     title=_('Commands'),
     help=_('command (use "{} [COMMAND] --help" for details)', '%(prog)s'))
 
-  # TODO: re-enable the aliases... but first figure out how to
-  #       eliminate the aliases from the list of available commands
-  #       in the help text.
+  # TODO: maybe extend those commands that take a QUERY to support
+  #       multiple QUERIES?...
 
-  # INIT command
-  subcli = subcmds.add_parser(
-    _('init'), #aliases=('i', 'ini',),
-    parents=[common],
-    help=_('create initial secpass configuration file'))
-  subcli.add_argument(
-    _('-f'), _('--force'),
-    dest='force', action='store_true',
-    help=_('force overwrite of existing configuration file'))
-  subcli.set_defaults(call=cmd_init)
+  # TODO: re-enable the aliases... but first figure out how to
+  #       eliminate the aliases from the list of available commands in
+  #       the help text.
+
+  # CONFIG command
+  addConfigCommand(subcmds, common)
 
   # ADD command
   subcli = subcmds.add_parser(
@@ -431,7 +343,7 @@ def main(argv=None):
     _('role'), metavar=_('ROLE'),
     help=_('role or username for the service'))
   subcli.add_argument(
-    _('password'), metavar=_('PASSWORD'),
+    'password', metavar=_('PASSWORD'),
     nargs='?',
     help=_('new password (if "-" it will be prompted for, if empty or' \
              ' unspecified it will be auto-generated)'))
@@ -466,7 +378,7 @@ def main(argv=None):
     _('query'), metavar=_('EXPR'),
     help=_('expression (list of keywords) to search for in the database'))
   subcli.add_argument(
-    _('password'), metavar=_('PASSWORD'),
+    'password', metavar=_('PASSWORD'),
     nargs='?',
     help=_('new password (if "-" it will be prompted for, if empty or'
            ' unspecified it will be auto-generated)'))
@@ -489,7 +401,7 @@ def main(argv=None):
     help=_('remove an entry'))
   subcli.add_argument(
     _('-f'), _('--force'),
-    dest='force', action='store_true',
+    dest='force', default=False, action='store_true',
     help=_('delete all matches without prompting for confirmation'))
   subcli.add_argument(
     _('query'), metavar=_('EXPR'),
@@ -503,53 +415,13 @@ def main(argv=None):
     parents=[common],
     help=_('search for an entry'))
   subcli.add_argument(
-    _('query'), metavar=_('EXPR'),
+    'query', metavar=_('EXPR'),
     nargs='?',
     help=_('expression (list of keywords) to search for (if'
            ' unspecified, lists all entries in the profile)'))
   subcli.set_defaults(call=cmd_list)
 
-  options = cli.parse_args(args=argv)
-
-  if options.verbose == 1:
-    rootlog.setLevel(logging.INFO)
-  elif options.verbose > 1:
-    rootlog.setLevel(logging.DEBUG)
-
-  options.config = resolvePath(options.config)
-
-  if not os.path.isfile(options.config):
-    if options.call is not cmd_init:
-      cli.error(
-        _('configuration "{}" does not exist -- use "{prog} init" to create it',
-          options.config, prog=cli.prog))
-    return options.call(options)
-  if options.call is cmd_init:
-    return options.call(options)
-
-  try:
-    options.engine = engine.Engine(options.config)
-  except engine.ConfigError as e:
-    cli.error(e)
-
-  try:
-    options.profile = options.engine.getProfile(options.profile)
-  except KeyError:
-    cli.error(_('profile "{}" not found', options.profile))
-
-  try:
-    if getattr(options, 'query', False):
-      options.query = ( 'regex:' if options.regex else 'query:') \
-        + options.query
-    return options.call(options, options.profile)
-  except ProgramExit as err:
-    return err.message
-  except api.Error as err:
-    log.debug(
-      'failed during execution of %s:', options.call.__name__, exc_info=True)
-    print >>sys.stderr, '[**] ERROR: {}: {}'.format(
-      err.__class__.__name__, err.message)
-    return 100
+  return run(cli, argv)
 
 #------------------------------------------------------------------------------
 # end of $Id$
