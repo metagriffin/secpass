@@ -27,7 +27,7 @@ from secpass.driver import gpgfile
 from secpass.test_helpers import TestSecPassHelper
 
 #------------------------------------------------------------------------------
-class TestGpgDriver(TestSecPassHelper):
+class TestGpgFileDriver(TestSecPassHelper):
 
   #----------------------------------------------------------------------------
   def setUp(self):
@@ -41,7 +41,7 @@ class TestGpgDriver(TestSecPassHelper):
 #     tdir = tempfile.mkdtemp(prefix='test-smp-driver-gpgfile.')
 #     path = os.path.join(tdir, 'data.csv.gpg')
 #     self.assertFalse(os.path.exists(path))
-#     driver = gpgfile.GpgFileDriver(path=path, **self.gpgargs)
+#     driver = gpgfile.Driver(path=path, **self.gpgargs)
 #     self.assertEqual(len(list(driver.find())), 0)
 #     self.assertFalse(os.path.exists(path))
 #     driver.create(api.Entry(

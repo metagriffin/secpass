@@ -48,16 +48,10 @@ class StreamEntry(api.Entry):
     return self
 
 #------------------------------------------------------------------------------
-class AbstractStreamDriver(api.Store):
-
-  PARAMS = ()
+class AbstractStreamStore(api.Store):
 
   FIELDS = ('id', 'seq', 'created', 'updated', 'lastused', 'deleted') \
     + api.Entry.ATTRIBUTES
-
-  #----------------------------------------------------------------------------
-  def __init__(self, *args, **kw):
-    pass
 
   #----------------------------------------------------------------------------
   def create(self, entry):
@@ -199,6 +193,14 @@ class AbstractStreamDriver(api.Store):
   #----------------------------------------------------------------------------
   def openWriteStream(self):
     raise NotImplementedError()
+
+#------------------------------------------------------------------------------
+class AbstractStreamDriver(api.Driver):
+
+  #----------------------------------------------------------------------------
+  def __init__(self, *args, **kw):
+    super(AbstractStreamDriver, self).__init__(*args, **kw)
+    self.features.secpass = True
 
 #------------------------------------------------------------------------------
 # end of $Id$

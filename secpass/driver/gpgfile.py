@@ -28,7 +28,6 @@ import gnupg
 from aadict import aadict
 
 from . import file
-from .file import FileDriver
 from secpass.util import _
 
 #------------------------------------------------------------------------------
@@ -45,16 +44,11 @@ def newdefpath(params):
   return params
 
 #------------------------------------------------------------------------------
-class GpgFileDriver(FileDriver):
-
-  PARAMS = newdefpath(file.FileDriver.PARAMS) + (
-    aadict(label=_('Use GPG agent'), name='agent', type='bool', default=True),
-    aadict(label=_('Identity'), name='identity', type='str', default=None),
-    )
+class Store(file.Store):
 
   #----------------------------------------------------------------------------
-  def __init__(self, config):
-    super(GpgFileDriver, self).__init__(config)
+  def __init__(self, driver, config, *args, **kw):
+    super(Store, self).__init__(*args, **kw)
     self.gpg  = gnupg.GPG(use_agent=config.agent)
     self.rcpt = config.identity or None
 
@@ -62,7 +56,7 @@ class GpgFileDriver(FileDriver):
   def openReadStream(self):
     if not os.path.isfile(self.path):
       return self.openEmptyReadStream()
-    with super(GpgFileDriver, self).openReadStream() as fp:
+    with super(Driver, self).openReadStream() as fp:
       # note: can't simply do this:
       #         return self.openDecryptStream(fp)
       #       because the context is closed (and therefore the
@@ -92,12 +86,31 @@ class GpgFileDriver(FileDriver):
     if not crypt.ok:
       raise EncryptionError(
         _('Is identity "{}" loaded in your GPG agent?', self.rcpt))
+    # todo: is this 'str()' safe for binary data?... perhaps
+    #       just use `crypt.data`?...
     encbuf = str(crypt)
     # do a round-trip decryption to ensure that no data was lost...
     with self.openDecryptStream(StringIO(encbuf)) as fp:
       assert fp.read() == buf
-    with super(GpgFileDriver, self).openWriteStream() as fp:
+    with super(Driver, self).openWriteStream() as fp:
       fp.write(encbuf)
+
+#------------------------------------------------------------------------------
+class Driver(file.Driver):
+
+  name = 'Encrypted CSV File Storage'
+
+  #----------------------------------------------------------------------------
+  def __init__(self, *args, **kw):
+    super(Driver, self).__init__(*args, **kw)
+    self.params = newdefpath(self.params) + (
+      aadict(label=_('Use GPG agent'), name='agent', type='bool', default=True),
+      aadict(label=_('Identity'), name='identity', type='str', default=None),
+    )
+
+  #----------------------------------------------------------------------------
+  def getStore(self, config):
+    return Store(self, config)
 
 #------------------------------------------------------------------------------
 # end of $Id$

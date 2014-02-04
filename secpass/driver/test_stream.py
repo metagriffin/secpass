@@ -27,7 +27,7 @@ from secpass.driver import stream
 from secpass.test_helpers import TestSecPassHelper
 
 #------------------------------------------------------------------------------
-class BufferDriver(stream.AbstractStreamDriver):
+class BufferStore(stream.AbstractStreamStore):
   def __init__(self, value=''):
     self.value = value
   @contextmanager
@@ -44,7 +44,7 @@ class TestAbstractStreamDriver(TestSecPassHelper):
 
   #----------------------------------------------------------------------------
   def test_create(self):
-    driver = BufferDriver()
+    driver = BufferStore()
     driver.create(api.Entry(
       service='testservice', role='testrole', password='testpass', notes='testnotes'))
     chk = '''\
@@ -55,7 +55,7 @@ class TestAbstractStreamDriver(TestSecPassHelper):
 
   #----------------------------------------------------------------------------
   def test_read(self):
-    driver = BufferDriver()
+    driver = BufferStore()
     cent = driver.create(api.Entry(
       service='testservice', role='testrole', password='testpass', notes='testnotes'))
     entries = driver.find()
@@ -65,13 +65,13 @@ class TestAbstractStreamDriver(TestSecPassHelper):
     self.assertEqual(fent.role, 'testrole')
     self.assertEqual(fent.password, None)
     self.assertEqual(fent.notes, 'testnotes')
-    for attr in stream.AbstractStreamDriver.FIELDS:
+    for attr in stream.AbstractStreamStore.FIELDS:
       if attr == 'password':
         continue
       self.assertEqual(getattr(cent, attr), getattr(fent, attr))
     rent = driver.read(fent.id)
     self.assertEqual(rent.password, 'testpass')
-    for attr in stream.AbstractStreamDriver.FIELDS:
+    for attr in stream.AbstractStreamStore.FIELDS:
       if attr not in ('seq', 'lastused'):
         self.assertEqual(getattr(cent, attr), getattr(rent, attr))
       else:
@@ -81,7 +81,7 @@ class TestAbstractStreamDriver(TestSecPassHelper):
 
   #----------------------------------------------------------------------------
   def test_update(self):
-    driver = BufferDriver()
+    driver = BufferStore()
     driver.create(api.Entry(
       service='testservice', role='testrole', password='testpass', notes='testnotes'))
     eid = list(driver.find())[0].id
@@ -117,7 +117,7 @@ more notes"
 
   #----------------------------------------------------------------------------
   def test_modify(self):
-    driver = BufferDriver()
+    driver = BufferStore()
     driver.create(api.Entry(
       service='testservice', role='testrole', password='testpass', notes='testnotes'))
     eid = list(driver.find())[0].id
@@ -143,7 +143,7 @@ more notes"
 
   #----------------------------------------------------------------------------
   def test_delete(self):
-    driver = BufferDriver()
+    driver = BufferStore()
     driver.create(api.Entry(
       service='testservice', role='testrole', password='testpass', notes='testnotes'))
     eid = list(driver.find())[0].id

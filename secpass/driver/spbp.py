@@ -32,6 +32,7 @@ import time
 import logging
 from six.moves import urllib
 import base64
+import hashlib
 
 from secpass import api
 from secpass.util import _
@@ -54,11 +55,23 @@ class GpgEnv():
   def __exit__(self, type, value, tb):
     shutil.rmtree(self.gpgdir)
     return False
+  def importKey(self, keydata, private=None, public=None):
+    res = self.gpg.import_keys(keydata)
+    # todo: is there a res.ok?...
+    # todo: make this depend on `private` and/or `public`
+    if res.count < 1:
+      # todo: extract error from res...
+      raise ValueError(_('PGP data did not specify a key'))
+    if res.count > 1:
+      raise ValueError(_('PGP data specified more than one key'))
+    # todo: confirm that `res` indicates a public or private
+    #       key was imported as specified by `private` and/or `public`...
+    return res.fingerprints[0]
 
 #------------------------------------------------------------------------------
-def signData(privkey, data):
+def signData(data, privkey):
   with GpgEnv() as genv:
-    genv.gpg.import_keys(privkey)
+    genv.importKey(privkey, private=True)
     res = genv.gpg.sign(data, clearsign=False, detach=True, binary=True)
     return base64.b64encode(res.data)
 
@@ -78,29 +91,26 @@ class Entry(api.Entry):
     return ret
 
 #------------------------------------------------------------------------------
-class Driver(api.Store, AuthBase):
+class Note(api.Note):
 
-  PARAMS = (
-    aadict(
-      label=_('Server URL'), name='url', type='str',
-      placeholder='https://opiyum.net/secpass/vault/NAME',
-      help=_('The remote server URL that stores this vault\'s data (must'
-             ' support the SPBP protocol version 1.0 or better)')),
-    aadict(label=_('Username'), name='username', type='str'),
-    aadict(label=_('Password (PGP-encrypted)'), name='password', type='pgp(str)'),
-    aadict(label=_('Public key'), name='publickey', type='str'),
-    aadict(label=_('Private key (PGP-encrypted)'), name='privatekey', type='pgp(str)'),
-    aadict(label=_('Nonce tracker'), name='nonce', type='path', default=None),
-    ## todo: ensure that these defaults are evaluated within a ConfigParser context...
-    aadict(label=_('Peer database'), name='peerdb', type='path', default='%(__name__)s.peers.db'),
-  )
+  #----------------------------------------------------------------------------
+  @staticmethod
+  def fromJson(data):
+    ret = Note()
+    for key, value in data.items():
+      setattr(ret, key, value)
+    return ret
+
+#------------------------------------------------------------------------------
+class Store(api.Store, AuthBase):
 
   FIELDS = ('id', 'seq', 'created', 'updated', 'lastused', 'deleted') \
     + api.Entry.ATTRIBUTES
 
   #----------------------------------------------------------------------------
-  def __init__(self, config, *args, **kw):
-    super(Driver, self).__init__(*args, **kw)
+  def __init__(self, driver, config, *args, **kw):
+    super(Store, self).__init__(*args, **kw)
+    self.driver     = driver
     self.url        = config.url
     self.username   = config.username
     # note: the password here is stored pgp-encrypted in memory and
@@ -114,9 +124,7 @@ class Driver(api.Store, AuthBase):
 
     # todo: move to using a PID-lifetime-persistent spbp GPG dir?...
     with GpgEnv() as genv:
-      res = genv.gpg.import_keys(self.publickey)
-      assert res.count == 1
-      self.fingerprint = res.fingerprints[0]
+      self.fingerprint = genv.importKey(self.publickey)
 
     # TODO: load this from self.peerdb...
     self.peerfps = [self.fingerprint]
@@ -142,14 +150,17 @@ class Driver(api.Store, AuthBase):
     return data.data
 
   #----------------------------------------------------------------------------
-  def decrypt(self, data):
+  def decrypt(self, data, symmetric=False):
     if data is None:
       return data
     with GpgEnv() as genv:
       # todo: check return...
-      res  = genv.gpg.import_keys(self.getPrivateKey())
-      # TODO: do key referencing...
-      data = genv.gpg.decrypt(data)
+      genv.importKey(self.getPrivateKey())
+      if symmetric:
+        # TODO: do key referencing...
+        raise NotImplementedError()
+      else:
+        data = genv.gpg.decrypt(data)
       if not data.ok:
         # todo: extract error information....
         raise api.DriverError(
@@ -157,15 +168,18 @@ class Driver(api.Store, AuthBase):
       return data.data
 
   #----------------------------------------------------------------------------
-  def encrypt(self, data):
+  def encrypt(self, data, symmetric=False):
     if data is None:
       return data
     with GpgEnv() as genv:
       for key in self.peerkeys:
-        # todo: check return...
-        res  = genv.gpg.import_keys(key)
-      # TODO: do key referencing...
-      data = genv.gpg.encrypt(data, self.peerfps, always_trust=True, armor=True)
+        genv.importKey(key)
+      if symmetric:
+        # TODO: do key referencing...
+        raise NotImplementedError()
+      else:
+        data = genv.gpg.encrypt(
+          data, self.peerfps, always_trust=True, armor=True)
       if not data.ok:
         # todo: extract error information...
         raise api.DriverError(
@@ -175,13 +189,30 @@ class Driver(api.Store, AuthBase):
   #----------------------------------------------------------------------------
   def j2e(self, data):
     entry = Entry.fromJson(data)
-    entry.password = self.decrypt(entry.password)
+    entry.password = self.decrypt(entry.password, symmetric=True)
     return entry
 
   #----------------------------------------------------------------------------
   def e2j(self, entry):
     data = morph.pick(entry, *api.Entry.ATTRIBUTES)
-    data['password'] = self.encrypt(data.get('password'))
+    data['password'] = self.encrypt(data.get('password'), symmetric=True)
+    return data
+
+  #----------------------------------------------------------------------------
+  def j2n(self, data):
+    note = Note.fromJson(data)
+    if note.secure:
+      note.content = self.decrypt(note.content, symmetric=False)
+    return note
+
+  #----------------------------------------------------------------------------
+  def n2j(self, note):
+    data    = morph.pick(note, *api.Note.ATTRIBUTES)
+    content = data.get('content','')
+    if note.secure:
+      data['digest']    = 'sha256:' + hashlib.sha256(content).hexdigest()
+      data['content']   = self.encrypt(content, symmetric=False)
+      data['signature'] = signData(data['content'], self.getPrivateKey())
     return data
 
   #----------------------------------------------------------------------------
@@ -208,14 +239,20 @@ class Driver(api.Store, AuthBase):
     req = HTTPBasicAuth(self.username, self.getPassword())(req)
     auth = 'SPBP-SIGN v=0;f={fp};n={nonce};t={ts}'.format(
       fp=q(self.fingerprint), nonce=q(self.getNonce()), ts=time.time())
-    sdata = '\n'.join([req.url, req.body or '', auth])
-    auth += ';s=' + q(signData(self.getPrivateKey(), sdata))
+    sdata = '\n'.join([req.method.upper(), req.url, req.body or '', auth])
+    auth += ';s=' + q(signData(sdata, self.getPrivateKey()))
     req.headers['x-spbp-authorization'] = auth
     return req
 
   #----------------------------------------------------------------------------
   def _request(self, path=None, method='get', data=None):
-    data = json.dumps(data) if data is not None else None
+    if data and not morph.isstr(data):
+      if method.lower() != 'get':
+        data = json.dumps(data)
+      else:
+        path += '?' if '?' not in path else '&'
+        path += urllib.parse.urlencode(data)
+        data = None
     path = self.url + ( path or '' )
     auth = (self.username, self.password)
     hdrs = {'content-type': 'application/json'}
@@ -233,6 +270,10 @@ class Driver(api.Store, AuthBase):
         raise err
       raise RemoteError(msg)
     return res.json()
+
+  #----------------------------------------------------------------------------
+  # SECURE PASSWORD API
+  #----------------------------------------------------------------------------
 
   #----------------------------------------------------------------------------
   def create(self, entry):
@@ -256,7 +297,64 @@ class Driver(api.Store, AuthBase):
 
   #----------------------------------------------------------------------------
   def delete(self, entry_id):
+    # todo: do some more error extraction attempt?...
     assert self._request('/entry/' + entry_id, method='delete') == dict()
+
+  #----------------------------------------------------------------------------
+  # SECURE NOTE API
+  #----------------------------------------------------------------------------
+
+  #----------------------------------------------------------------------------
+  def note_set(self, note):
+    if not note.id:
+      return self.j2n(
+        self._request('/note', method='post', data=self.n2j(note)))
+    return self.j2n(
+      self._request('/note/' + note.id, method='put', data=self.n2j(note)))
+
+  #----------------------------------------------------------------------------
+  def note_get(self, ident):
+    return self.j2n(self._request('/note/' + q(ident)))
+
+  #----------------------------------------------------------------------------
+  def note_find(self, expr=None):
+    return [self.j2n(note)
+            for note in self._request('/note',
+                                      data=dict(q=expr) if expr else None)]
+
+  #----------------------------------------------------------------------------
+  def note_delete(self, ident):
+    assert self._request('/note/' + q(ident), method='delete') == dict()
+
+#------------------------------------------------------------------------------
+class Driver(api.Driver):
+
+  name = 'SecPass Broker'
+
+  #----------------------------------------------------------------------------
+  def __init__(self, *args, **kw):
+    super(Driver, self).__init__(*args, **kw)
+    self.features.secnote = True
+    self.features.secpass = True
+    self.features.sync    = True
+    self.params += (
+      aadict(
+        label=_('Server URL'), name='url', type='str',
+        placeholder='https://opiyum.net/secpass/vault/NAME',
+        help=_('The remote server URL that stores this vault\'s data (must'
+               ' support the SPBP protocol version 1.0 or better)')),
+      aadict(label=_('Username'), name='username', type='str'),
+      aadict(label=_('Password (PGP-encrypted)'), name='password', type='pgp(str)'),
+      aadict(label=_('Public key'), name='publickey', type='str'),
+      aadict(label=_('Private key (PGP-encrypted)'), name='privatekey', type='pgp(str)'),
+      aadict(label=_('Nonce tracker'), name='nonce', type='path', default=None),
+      ## todo: ensure that these defaults are evaluated within a ConfigParser context...
+      aadict(label=_('Peer database'), name='peerdb', type='path', default='%(__name__)s.peers.db'),
+    )
+
+  #----------------------------------------------------------------------------
+  def getStore(self, config):
+    return Store(self, config)
 
 #------------------------------------------------------------------------------
 # end of $Id$

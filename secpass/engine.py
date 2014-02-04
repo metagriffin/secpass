@@ -46,38 +46,42 @@ class Profile(api.ProxyStore):
     self.id       = pid
     self.settings = settings
     self.driver   = None
+    self.store    = None
 
   @property
   def name(self):
     return self.settings.name
 
   #----------------------------------------------------------------------------
-  def ready(self):
-    if not self.driver:
-      self.driver = self._loadDriver()
-      self.proxy  = self.driver
-    return self
-
-  #----------------------------------------------------------------------------
-  def _loadDriver(self):
-    driver = asset.symbol(self.settings.get('driver', api.DEFAULT_DRIVER))
+  def init(self):
+    if self.driver:
+      return self
+    drvname = self.settings.get('driver', api.DEFAULT_DRIVER)
+    drvcall  = asset.symbol(drvname)
+    if not callable(drvcall):
+      drvcall = asset.symbol(drvname + '.Driver')
     params = aadict()
-    for param in getattr(driver, 'PARAMS', []):
-      if 'driver.' + param.name not in self.settings:
+    self.driver = drvcall()
+    settings = morph.pick(self.settings, prefix='driver.')
+    for param in self.driver.params:
+      if param.name not in settings:
         if 'default' in param:
           params[param.name] = param.default
           continue
         raise ConfigError(
           'required configuration "driver.%s" missing in profile "%s"'
           % (param.name, self.id))
-      val = self.settings['driver.' + param.name]
+      val = settings[param.name]
       if param.type == 'bool':
         params[param.name] = morph.tobool(self.engine.resolveVars(val))
       elif param.type == 'path':
         params[param.name] = self.engine.resolvePath(val)
       else:
         params[param.name] = self.engine.resolveVars(val)
-    return driver(params)
+    # todo: check that all "driver.*" configs were consumed...
+    self.store = self.driver.getStore(params)
+    self.proxy = self.store
+    return self
 
 #------------------------------------------------------------------------------
 class Engine(object):
@@ -92,12 +96,12 @@ class Engine(object):
   def getProfile(self, profile=None):
     '''
     Returns the specified profile (by ID or by name). If `profile` is
-    ``None``, the returns the default profile.
+    ``None`` or omitted, returns the default profile.
     '''
     if profile is None:
       # todo: what if the configuration `profile.default` does not exist?
       profile = self.config.get('DEFAULT', 'profile.default')
-    return self.profiles[profile].ready()
+    return self.profiles[profile].init()
 
   #----------------------------------------------------------------------------
   def _loadConfig(self):

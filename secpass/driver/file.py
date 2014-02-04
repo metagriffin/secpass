@@ -25,22 +25,19 @@ from contextlib import contextmanager
 from aadict import aadict
 
 from . import stream
-from .stream import AbstractStreamDriver
+from .stream import AbstractStreamDriver, AbstractStreamStore
 
 #------------------------------------------------------------------------------
 DEFAULT_PATH = '~/.config/secpass/data.csv'
 
 #------------------------------------------------------------------------------
-class FileDriver(AbstractStreamDriver):
-
-  PARAMS = stream.AbstractStreamDriver.PARAMS + (
-    aadict(name='path', type='path', default=DEFAULT_PATH),
-    )
+class Store(AbstractStreamStore):
 
   #----------------------------------------------------------------------------
-  def __init__(self, config):
-    super(FileDriver, self).__init__(config)
-    self.path = config.path
+  def __init__(self, driver, config, *args, **kw):
+    super(Store, self).__init__(*args, **kw)
+    self.driver = driver
+    self.path   = config.path
 
   #----------------------------------------------------------------------------
   def openReadStream(self):
@@ -60,6 +57,23 @@ class FileDriver(AbstractStreamDriver):
       if not os.path.isdir(cdir):
         os.makedirs(cdir)
     return open(self.path, 'wb')
+
+#------------------------------------------------------------------------------
+class Driver(AbstractStreamDriver):
+
+  name = '*UNENCRYPTED* CSV File Storage'
+
+  #----------------------------------------------------------------------------
+  def __init__(self, *args, **kw):
+    super(Driver, self).__init__(*args, **kw)
+    self.features.secpass = True
+    self.params += (
+      aadict(name='path', type='path', default=DEFAULT_PATH),
+    )
+
+  #----------------------------------------------------------------------------
+  def getStore(self, config):
+    return Store(self, config)
 
 #------------------------------------------------------------------------------
 # end of $Id$

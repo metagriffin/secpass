@@ -44,20 +44,20 @@ class TestFileDriver(TestSecPassHelper):
     tdir = tempfile.mkdtemp(prefix='test-secpass-driver-file.')
     path = os.path.join(tdir, 'data.csv')
     self.assertFalse(os.path.exists(path))
-    driver = file.FileDriver(aadict(path=path))
-    self.assertEqual(len(list(driver.find())), 0)
+    store = file.Driver().getStore(aadict(path=path))
+    self.assertEqual(len(list(store.find())), 0)
     self.assertFalse(os.path.exists(path))
-    driver.create(api.Entry(
+    store.create(api.Entry(
       service='testservice', role='testrole', password='testpass', notes='testnotes'))
-    entries = list(driver.find())
+    entries = list(store.find())
     self.assertEqual(len(entries), 1)
-    entry = driver.read(entries[0].id)
+    entry = store.read(entries[0].id)
     self.assertEqual(entry.service, 'testservice')
     entry.password = 'newpass'
-    driver.update(entry)
-    driver.create(api.Entry(
+    store.update(entry)
+    store.create(api.Entry(
       service='testservice2', role='testrole2', password='testpass2', notes='testnotes2'))
-    driver.delete(entry.id)
+    store.delete(entry.id)
     chk = '''\
 "id","seq","created","updated","lastused","deleted","service","role","password","notes"
 :UUID:$ID1,0,:~NOW:$CTS1,:~NOW,:~NOW,:NULL,"testservice","testrole","testpass","testnotes"

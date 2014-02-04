@@ -20,6 +20,7 @@
 #------------------------------------------------------------------------------
 
 import morph
+from aadict import aadict
 
 #------------------------------------------------------------------------------
 class Error(Exception): pass
@@ -30,7 +31,7 @@ class IntegrityError(Error): pass
 
 #------------------------------------------------------------------------------
 DEFAULT_CONFIG          = '~/.config/secpass/config.ini'
-DEFAULT_DRIVER          = 'file'
+DEFAULT_DRIVER          = 'secpass.driver.file'
 
 #------------------------------------------------------------------------------
 class Sequence(object):
@@ -75,6 +76,16 @@ class Entry(object):
     return '<secpass.Entry %r>' % ({
       k: v for k, v in self.__dict__.items() if k != 'password'})
 
+#------------------------------------------------------------------------------
+class Note(object):
+
+  ATTRIBUTES = ('name', 'content', 'secure')
+
+  def __init__(self, id=None, name=None, content=None, secure=True):
+    self.id = id or None
+    self.name = name
+    self.content = content
+    self.secure = secure
 
 #------------------------------------------------------------------------------
 class Store(object):
@@ -157,6 +168,22 @@ class Store(object):
     '''
     raise NotImplementedError()
 
+  #----------------------------------------------------------------------------
+  def note_set(self, note):
+    raise NotImplementedError()
+
+  #----------------------------------------------------------------------------
+  def note_get(self, ident):
+    raise NotImplementedError()
+
+  #----------------------------------------------------------------------------
+  def note_find(self, query):
+    raise NotImplementedError()
+
+  #----------------------------------------------------------------------------
+  def note_delete(self, note_id):
+    raise NotImplementedError()
+
 #------------------------------------------------------------------------------
 class ProxyStore(Store):
 
@@ -173,6 +200,23 @@ class ProxyStore(Store):
   def delete(self, *args, **kw):    return self.proxy.delete(*args, **kw)
   def find(self, *args, **kw):      return self.proxy.find(*args, **kw)
 
+  #----------------------------------------------------------------------------
+  def note_set(self, *args, **kw):    return self.proxy.note_set(*args, **kw)
+  def note_get(self, *args, **kw):    return self.proxy.note_get(*args, **kw)
+  def note_find(self, *args, **kw):   return self.proxy.note_find(*args, **kw)
+  def note_delete(self, *args, **kw): return self.proxy.note_delete(*args, **kw)
+
+#------------------------------------------------------------------------------
+class Driver(object):
+  name     = None
+  params   = None
+  features = None
+  def __init__(self, *args, **kw):
+    super(Driver, self).__init__(*args, **kw)
+    self.features = self.features or aadict()
+    self.params   = self.params or tuple()
+  def getStore(self, config):
+    raise NotImplementedError()
 
 #------------------------------------------------------------------------------
 # end of $Id$
