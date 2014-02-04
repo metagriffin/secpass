@@ -337,7 +337,7 @@ def main(argv=None):
     help=_('cocoon-style glob of secure note names to delete'))
   subcli.set_defaults(call=cmd_delete)
 
-  return run(cli, argv)
+  return run(cli, argv, features={'secnote': 1})
 
 #------------------------------------------------------------------------------
 # end of $Id$

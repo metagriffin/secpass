@@ -421,7 +421,7 @@ def main(argv=None):
            ' unspecified, lists all entries in the profile)'))
   subcli.set_defaults(call=cmd_list)
 
-  return run(cli, argv)
+  return run(cli, argv, features={'secpass': 1})
 
 #------------------------------------------------------------------------------
 # end of $Id$

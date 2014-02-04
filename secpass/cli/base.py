@@ -120,13 +120,13 @@ def makeCommonOptions(default_config=None, default_profile=None):
     _('-r'), _('--regex'),
     dest='regex', action='store_true',
     help=_('switch the default processing of any EXPR or GLOB parameter to'
-           ' use regular expressions (the default is to use, respectively,'
-           ' natural-language evaluation and cocoon-style glob matching)'))
+           ' use regular expressions (the default is to respectively use'
+           ' natural language and cocoon-style glob matching)'))
 
   return common
 
 #------------------------------------------------------------------------------
-def run(cli, argv):
+def run(cli, argv, features=None):
 
   from .config import cmd_config
 
@@ -162,6 +162,15 @@ def run(cli, argv):
     options.profile = options.engine.getProfile(options.profile)
   except KeyError:
     cli.error(_('profile "{}" not found', options.profile))
+
+  if features:
+    driver = options.profile.driver
+    for feature, version in features.items():
+      # todo: perhaps use setuptools' version comparison
+      #       and requirements facility
+      if driver.features.get(feature) != version:
+        cli.error(_('profile driver "{}" does not support feature "{}"',
+                    driver.name, feature))
 
   try:
     # TODO: ==> in multi-query/glob mode, allow per-query/glob regex control...
