@@ -3,6 +3,14 @@ ChangeLog
 =========
 
 
+v0.4.0
+======
+
+* Added SPBP encrypted note support
+* Added secnote CLI program
+* Added secpass/secnote CLI configuration command
+
+
 v0.3
 ====
 
@@ -13,6 +21,6 @@ v0.3
 v0.2
 ====
 
-* First git-tagged release
+* First tagged release
 * Made default entry selection be non-regex
 * Cleaned up command line option parsing
