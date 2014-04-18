@@ -48,6 +48,8 @@ dependencies = [
   'aadict               >= 0.2.1',
   'globre               >= 0.1.2',
   'requests             >= 2.1.0',
+  'FormEncode           >= 1.3.0a1',
+  'blessings            >= 1.5.1',
 ]
 
 entrypoints = {

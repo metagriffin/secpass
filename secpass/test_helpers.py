@@ -19,8 +19,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #------------------------------------------------------------------------------
 
-import unittest, csv, time, urllib
-from StringIO import StringIO
+import unittest, csv, time, urllib, six
 
 #------------------------------------------------------------------------------
 class TestSecPassHelper(unittest.TestCase):
@@ -31,8 +30,8 @@ class TestSecPassHelper(unittest.TestCase):
 
   #----------------------------------------------------------------------------
   def assertSecPassCsvEqual(self, test, check):
-    out = list(csv.reader(StringIO(test)))
-    chk = list(csv.reader(StringIO(check)))
+    out = list(csv.reader(six.StringIO(test)))
+    chk = list(csv.reader(six.StringIO(check)))
     self.assertEqual(len(out), len(chk))
     self.assertEqual(out[0], chk[0])
     tab = dict()

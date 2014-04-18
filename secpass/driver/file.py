@@ -26,9 +26,15 @@ from aadict import aadict
 
 from . import stream
 from .stream import AbstractStreamDriver, AbstractStreamStore
+from ..util import _
 
 #------------------------------------------------------------------------------
-DEFAULT_PATH = '~/.config/secpass/data.csv'
+# todo: this will by default put the data file in the same directory
+#       as the config... which is mixing data & confs... it should
+#       really be elsewhere, such as
+#       "~/.var/secpass/%(__name__)s.data.csv" or is there an `os`
+#       package constant to determine "data location"?...
+DEFAULT_PATH = '%(__name__)s.data.csv'
 
 #------------------------------------------------------------------------------
 class Store(AbstractStreamStore):
@@ -54,7 +60,7 @@ class Store(AbstractStreamStore):
   def openWriteStream(self):
     if not os.path.isfile(self.path):
       cdir = os.path.dirname(self.path)
-      if not os.path.isdir(cdir):
+      if cdir and not os.path.isdir(cdir):
         os.makedirs(cdir)
     return open(self.path, 'wb')
 
@@ -68,7 +74,7 @@ class Driver(AbstractStreamDriver):
     super(Driver, self).__init__(*args, **kw)
     self.features.secpass = 1
     self.params += (
-      aadict(name='path', type='path', default=DEFAULT_PATH),
+      aadict(label=_('Path to datafile'), name='path', type='path', default=DEFAULT_PATH),
     )
 
   #----------------------------------------------------------------------------

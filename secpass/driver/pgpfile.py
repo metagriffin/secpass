@@ -31,7 +31,7 @@ from . import file
 from secpass.util import _
 
 #------------------------------------------------------------------------------
-DEFAULT_PATH = file.DEFAULT_PATH + '.gpg'
+DEFAULT_PATH = file.DEFAULT_PATH + '.pgp'
 class EncryptionError(Exception): pass
 class DecryptionError(Exception): pass
 
@@ -48,15 +48,15 @@ class Store(file.Store):
 
   #----------------------------------------------------------------------------
   def __init__(self, driver, config, *args, **kw):
-    super(Store, self).__init__(*args, **kw)
-    self.gpg  = gnupg.GPG(use_agent=config.agent)
+    super(Store, self).__init__(driver, config, *args, **kw)
+    self.gpg  = gnupg.GPG(use_agent=config.agent, gnupghome=config.gpghome)
     self.rcpt = config.identity or None
 
   #----------------------------------------------------------------------------
   def openReadStream(self):
     if not os.path.isfile(self.path):
       return self.openEmptyReadStream()
-    with super(Driver, self).openReadStream() as fp:
+    with super(Store, self).openReadStream() as fp:
       # note: can't simply do this:
       #         return self.openDecryptStream(fp)
       #       because the context is closed (and therefore the
@@ -82,7 +82,7 @@ class Store(file.Store):
     buf = StringIO()
     yield buf
     buf = buf.getvalue()
-    crypt = self.gpg.encrypt(buf, self.rcpt)
+    crypt = self.gpg.encrypt(buf, self.rcpt, always_trust=True)
     if not crypt.ok:
       raise EncryptionError(
         _('Is identity "{}" loaded in your GPG agent?', self.rcpt))
@@ -92,7 +92,7 @@ class Store(file.Store):
     # do a round-trip decryption to ensure that no data was lost...
     with self.openDecryptStream(StringIO(encbuf)) as fp:
       assert fp.read() == buf
-    with super(Driver, self).openWriteStream() as fp:
+    with super(Store, self).openWriteStream() as fp:
       fp.write(encbuf)
 
 #------------------------------------------------------------------------------

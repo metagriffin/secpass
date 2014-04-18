@@ -30,8 +30,9 @@ import hashlib
 
 from .. import api, engine, util
 from ..util import localtime, resolvePath, _
-from .base import ProgramExit, AliasedSubParsersAction, makeCommonOptions, \
-  ask, confirm, run
+from .base import \
+  ProgramExit, AliasedSubParsersAction, FuzzyChoiceArgumentParser, \
+  makeCommonOptions, ask, confirm, confirmOrExit, run
 from .config import addConfigCommand
 
 #------------------------------------------------------------------------------
@@ -59,8 +60,9 @@ def selectNotes(options, notes, action):
   while True:
     print lead
     printNotes(options, notes)
+    # todo: move to use validator...
     choice = ask(
-      _('Which ones do you want {action} ("all" [default], "none", or specific numbers)? ',
+      _('Which ones do you want {action} ("all" [default], "none", or specific numbers)',
         action=action))
     if choice == _('none'):
       return []
@@ -89,7 +91,7 @@ def selectNotes(options, notes, action):
            action = action)
   print lead
   printNotes(options, notes)
-  confirm(_('Are you sure (y/N)? '), exit=True)
+  confirmOrExit(_('Are you sure'), default=False)
   return notes
 
 #------------------------------------------------------------------------------
@@ -103,9 +105,7 @@ def cmd_set(options, engine):
   else:
     note = note[0]
     if options.interactive:
-      confirm(
-        _('Note "{}" already exists: overwrite (y/N)? ', note.name),
-        exit=True)
+      confirmOrExit(_('Note "{}" already exists: overwrite (y/N)? ', note.name))
   if options.filename == '-':
     note.content = sys.stdin.read()
   else:
@@ -171,7 +171,7 @@ def cmd_delete(options, engine):
   return 0
 
 #------------------------------------------------------------------------------
-def main(argv=None):
+def main(args=None):
 
   common = makeCommonOptions()
 
@@ -180,17 +180,16 @@ def main(argv=None):
     dest='showids', default=False, action='store_true',
     help=_('when showing lists of notes, also show the note IDs'))
 
-  cli = argparse.ArgumentParser(
+  cli = FuzzyChoiceArgumentParser(
     parents     = [common],
     description = _('Secure (encrypted) note storage and management'),
     epilog      = _('''
-      Whenever a FILENAME option is accepted, you can specify either
+      Wherever a FILENAME option is accepted, you can specify either
       the filename or "-". The latter indicates that STDIN should be
       used for input and STDOUT should be used for output. In some
       cases, the filename can be omitted completely and it will default
       to "-" handling.
-      ''')
-    )
+      '''))
 
   cli.register('action', 'parsers', AliasedSubParsersAction)
 
@@ -202,16 +201,12 @@ def main(argv=None):
   # TODO: maybe extend those commands that take a GLOB or FILENAME to
   #       support multiple GLOBS/FILENAMES?...
 
-  # TODO: re-enable the aliases... but first figure out how to
-  #       eliminate the aliases from the list of available commands in
-  #       the help text.
-
   # CONFIG command
   addConfigCommand(subcmds, common)
 
   # SET command
   subcli = subcmds.add_parser(
-    _('set'), #aliases=('add',),
+    _('set'), aliases=('add', 'create'),
     parents=[common],
     help=_('create or update the content of a secure note'))
   subcli.add_argument(
@@ -235,7 +230,7 @@ def main(argv=None):
   # LIST command
   # todo: if `grep` is used, assume regex=true
   subcli = subcmds.add_parser(
-    _('list'), #aliases=('ls', 'find', 'grep', 'search', 'query'),
+    _('list'), aliases=('find', 'grep', 'search', 'query'),
     parents=[common],
     help=_('search for a secure note'))
   subcli.add_argument(
@@ -251,7 +246,7 @@ def main(argv=None):
 
   # GET command
   subcli = subcmds.add_parser(
-    _('get'), #aliases=('fetch', ),
+    _('get'), aliases=('fetch', ),
     parents=[common],
     help=_('retrieve a secure note'))
   subcli.add_argument(
@@ -325,7 +320,7 @@ def main(argv=None):
 
   # DELETE command
   subcli = subcmds.add_parser(
-    _('delete'), #aliases=('remove'),
+    _('delete'), aliases=('remove'),
     parents=[common],
     help=_('remove a secure note'))
   subcli.add_argument(
@@ -337,7 +332,7 @@ def main(argv=None):
     help=_('cocoon-style glob of secure note names to delete'))
   subcli.set_defaults(call=cmd_delete)
 
-  return run(cli, argv, features={'secnote': 1})
+  return run(cli, args, features={'secnote': 1})
 
 #------------------------------------------------------------------------------
 # end of $Id$

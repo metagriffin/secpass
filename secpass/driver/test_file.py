@@ -20,7 +20,7 @@
 #------------------------------------------------------------------------------
 
 import unittest, tempfile, os, csv, shutil
-from StringIO import StringIO
+from six import StringIO
 from aadict import aadict
 import fso
 

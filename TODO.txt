@@ -1,3 +1,10 @@
+- secpass/cli/config: make "out()" by default call "layout()" (and
+  reduce a bunch of lines...)
+  ==> then search for all out() calls and ensure that it can be used
+  everywhere, and if not, add an option.
+
+- set mode of all new data files to 600
+
 - use FSO to test CLI
 
 - allow password generator configurations have cascading defaults:
@@ -8,3 +15,15 @@
 - create a multi-entry-edit mode
 
 - allow moving records between profiles
+
+- add unit tests for spbp with mock request responses
+
+- make separate api.Driver from api.Store...
+  * move api.Store to api.Vault
+  * add supported features reflection to api.Driver
+  * namespace Store.{create|get|find|delete|etc} with ".pass_" (like .note_*)
+
+- move to use only "print" as a function with
+  "from __future__ import print_function"
+
+- use `readline` functionality for CLI prompts?...

@@ -29,8 +29,9 @@ import morph
 
 from .. import api, util
 from ..util import zulu, localtime, _
-from .base import ProgramExit, AliasedSubParsersAction, makeCommonOptions, \
-  ask, confirm, run
+from .base import \
+  ProgramExit, AliasedSubParsersAction, FuzzyChoiceArgumentParser, \
+  makeCommonOptions, ask, confirm, confirmOrExit, run
 from .config import addConfigCommand
 
 #------------------------------------------------------------------------------
@@ -41,7 +42,7 @@ log = logging.getLogger(__name__)
 
 #------------------------------------------------------------------------------
 # todo: i18n...
-basefmt  = '  {idx: >{wid}}. {record.role: <{rwid}} @ {record.service: <{swid}}'
+basefmt  = '  {idx: >{wid}}. {record.role: <{rwid}} on {record.service: <{swid}}'
 pwfmt    = basefmt + ' : {record.password}'
 creatfmt = basefmt + ' (created {created}, last used {lastused})'
 modiffmt = basefmt + ' (created {created}, updated {updated}, last used {lastused})'
@@ -72,8 +73,9 @@ def selectEntries(options, records, action):
   while True:
     print lead
     printEntries(options, records)
+    # todo: move to use validator...
     choice = ask(
-      _('Which ones do you want {action} ("all" [default], "none", or specific numbers)? ',
+      _('Which ones do you want {action} ("all" [default], "none", or specific numbers)',
         action=action))
     if choice == _('none'):
       return []
@@ -102,19 +104,23 @@ def selectEntries(options, records, action):
            action = action)
   print lead
   printEntries(options, records)
-  confirm(_('Are you sure (y/N)? '), exit=True)
+  confirmOrExit(_('Are you sure'), default=False)
   return records
 
 #------------------------------------------------------------------------------
 def getPassword(options, prompt=None):
   if options.password == '-':
-    if prompt:
-      return False, getpass.getpass(prompt=prompt)
-    else:
-      return False, getpass.getpass()
+    while True:
+      ret = ask(prompt, lower=False, strip=False, echo=False)
+      ret2 = ask(_('Repeat password'), lower=False, strip=False, echo=False)
+      if ret == ret2:
+        break
+      print _('Passwords do not match - please try again.')
+      print
+    return False, ret
   if options.password is not None:
     return False, options.password
-  return (True, util.generatePassword(options.profile.settings))
+  return True, util.generatePassword(options.profile.settings)
 
 #------------------------------------------------------------------------------
 def cmd_add(options, engine):
@@ -129,20 +135,15 @@ def cmd_add(options, engine):
     else:
       print _('The following entries are similar:')
     printEntries(options, matches)
-    confirm(_('Continue with entry creation (y/N)? '), exit=True)
-  try:
-    display, newpass = getPassword(options)
-  except EOFError:
-    print '^D'
-    raise ProgramExit(20)
-  except KeyboardInterrupt:
-    print '^C'
-    raise ProgramExit(21)
+    confirmOrExit(_('Continue with entry creation'), default=False)
+  display, newpass = getPassword(
+    options, _('New password for {entry.role} (on {entry.service})',
+               entry=options))
   entry = api.Entry(
     service=options.service, role=options.role,
     password=newpass, notes=notes)
   if display:
-    print _('Setting password to "{entry.password}" for {entry.role} @ {entry.service}.',
+    print _('Setting password to "{entry.password}" for {entry.role} (on {entry.service}).',
             entry=entry)
   engine.create(entry)
   return 0
@@ -166,7 +167,8 @@ def cmd_get(options, engine):
     while True:
       print lead
       printEntries(options, records)
-      choice = ask(_('Your choice? '))
+      # todo: move to use validator...
+      choice = ask(_('Your choice'))
       try:
         idx = int(choice)
       except ValueError:
@@ -201,16 +203,9 @@ def cmd_set(options, engine):
   if len(records) <= 0:
     return 0
   for record in records:
-    try:
-      display, newpass = getPassword(
-        options, _('New password for {entry.role} @ {entry.service}: ',
-                   entry=record))
-    except EOFError:
-      print '^D'
-      raise ProgramExit(20)
-    except KeyboardInterrupt:
-      print '^C'
-      raise ProgramExit(21)
+    display, newpass = getPassword(
+      options, _('New password for {entry.role} (on {entry.service})',
+                 entry=record))
     record.password = newpass
     if options.overwrite:
       notes = options.notes
@@ -221,7 +216,7 @@ def cmd_set(options, engine):
     if options.role is not None:
       record.role = options.role
     if display:
-      print _('Setting password to "{entry.password}" for {entry.role} @ {entry.service}.',
+      print _('Setting password to "{entry.password}" for {entry.role} (on {entry.service}).',
               entry=record)
     engine.update(record)
   if len(records) == 1:
@@ -270,45 +265,21 @@ def cmd_list(options, engine):
   return 0
 
 #------------------------------------------------------------------------------
-def main(argv=None):
+def main(args=None):
 
-  defconf = os.environ.get('SECPASS_CONFIG', api.DEFAULT_CONFIG)
+  common = makeCommonOptions()
 
-  common = argparse.ArgumentParser(add_help=False)
-
-  common.add_argument(
-    _('-v'), _('--verbose'),
-    dest='verbose', action='count', default=0,
-    help=_('increase verbosity (can be specified multiple times)'))
-
-  common.add_argument(
-    _('-c'), _('--config'), metavar=_('FILENAME'),
-    dest='config', default=defconf,
-    help=_('configuration filename (current default: "{}")', '%(default)s'))
-
-  common.add_argument(
-    _('-p'), _('--profile'), metavar=_('PROFILE'),
-    dest='profile',
-    help=_('configuration profile id or name'))
-
-  common.add_argument(
-    _('-r'), _('--regex'),
-    dest='regex', action='store_true',
-    help=_('specifies that any EXPR is a regular expression (the default'
-           ' is to use natural-language evaluation)'))
-
-  cli = argparse.ArgumentParser(
+  cli = FuzzyChoiceArgumentParser(
     parents     = [common],
     description = _('Secure password generation, management, and storage'),
     epilog      = _('''
-      Whenever a PASSWORD option is accepted, you can specify either
+      Wherever a PASSWORD option is accepted, you can specify either
       the literal password, "-", or nothing at all. The literal "-"
       will cause secpass to prompt for the password, which is much
       more secure than providing the password on the command line (and
       is therefore the recommended approach). If not specified or
       empty, it will be auto-generated (and displayed).
-      ''')
-    )
+      '''))
 
   cli.register('action', 'parsers', AliasedSubParsersAction)
 
@@ -320,16 +291,12 @@ def main(argv=None):
   # TODO: maybe extend those commands that take a QUERY to support
   #       multiple QUERIES?...
 
-  # TODO: re-enable the aliases... but first figure out how to
-  #       eliminate the aliases from the list of available commands in
-  #       the help text.
-
   # CONFIG command
   addConfigCommand(subcmds, common)
 
   # ADD command
   subcli = subcmds.add_parser(
-    _('add'), #aliases=('a',),
+    _('add'), aliases=('create',),
     parents=[common],
     help=_('add a new entry'))
   subcli.add_argument(
@@ -351,7 +318,7 @@ def main(argv=None):
 
   # SET command
   subcli = subcmds.add_parser(
-    _('set'), #aliases=('s', 'update', 'u', 'rotate', 'rot', 'rt'),
+    _('set'), aliases=('update', 'rotate'),
     parents=[common],
     help=_('update/rotate an existing entry'))
   subcli.add_argument(
@@ -386,7 +353,7 @@ def main(argv=None):
 
   # GET command
   subcli = subcmds.add_parser(
-    _('get'), #aliases=('g', ),
+    _('get'), aliases=('fetch', ),
     parents=[common],
     help=_('retrieve a secure password'))
   subcli.add_argument(
@@ -396,7 +363,7 @@ def main(argv=None):
 
   # DELETE command
   subcli = subcmds.add_parser(
-    _('delete'), #aliases=('del', 'd', 'remove', 'rem', 'rm'),
+    _('delete'), aliases=('remove',),
     parents=[common],
     help=_('remove an entry'))
   subcli.add_argument(
@@ -411,7 +378,7 @@ def main(argv=None):
   # LIST command
   # todo: if `grep` is used, assume regex=true
   subcli = subcmds.add_parser(
-    _('list'), #aliases=('ls', 'l', 'find', 'f', 'grep', 'search', 'query'),
+    _('list'), aliases=('find', 'grep', 'search', 'query'),
     parents=[common],
     help=_('search for an entry'))
   subcli.add_argument(
@@ -421,7 +388,7 @@ def main(argv=None):
            ' unspecified, lists all entries in the profile)'))
   subcli.set_defaults(call=cmd_list)
 
-  return run(cli, argv, features={'secpass': 1})
+  return run(cli, args, features={'secpass': 1})
 
 #------------------------------------------------------------------------------
 # end of $Id$

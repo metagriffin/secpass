@@ -41,6 +41,13 @@ from secpass.util import _
 #       ==> but make sure that the keys are password-protected then.
 
 #------------------------------------------------------------------------------
+# todo: this will by default put the data file in the same directory
+#       as the config... which is mixing data & confs... it should
+#       really be elsewhere, such as
+#       "~/.var/secpass/%(__name__)s.peers.db" or is there an `os`
+#       package constant to determine "data location"?...
+DEFAULT_PEERDB = '%(__name__)s.peers.db'
+DEFAULT_NONCE  = None
 
 log = logging.getLogger(__name__)
 
@@ -48,20 +55,26 @@ class RemoteError(api.DriverError): pass
 
 #------------------------------------------------------------------------------
 class GpgEnv():
+  def __init__(self, user=False, gpghome=None):
+    self.gpgdir  = gpghome
+    self.autodel = False
+    if not gpghome and not user:
+      self.gpgdir = tempfile.mkdtemp(prefix='secpass-spbp-gpgdir.')
+      # TODO: set better permissions on `gpgdir`...
+      self.autodel = True
   def __enter__(self):
-    self.gpgdir = tempfile.mkdtemp(prefix='secpass-spbp-gpgdir.')
     self.gpg = gnupg.GPG(gnupghome=self.gpgdir)
     return self
   def __exit__(self, type, value, tb):
-    shutil.rmtree(self.gpgdir)
+    if self.autodel:
+      shutil.rmtree(self.gpgdir)
     return False
   def importKey(self, keydata, private=None, public=None):
     res = self.gpg.import_keys(keydata)
-    # todo: is there a res.ok?...
     # todo: make this depend on `private` and/or `public`
     if res.count < 1:
-      # todo: extract error from res...
-      raise ValueError(_('PGP data did not specify a key'))
+      # todo: gnupg should extract error from res.stderr...
+      raise ValueError(_('PGP data did not specify a key or could not be imported'))
     if res.count > 1:
       raise ValueError(_('PGP data specified more than one key'))
     # todo: confirm that `res` indicates a public or private
@@ -272,6 +285,11 @@ class Store(api.Store, AuthBase):
     return res.json()
 
   #----------------------------------------------------------------------------
+  def sync(self):
+    # TODO: check to see if any pending clients need to be authorized
+    pass
+
+  #----------------------------------------------------------------------------
   # SECURE PASSWORD API
   #----------------------------------------------------------------------------
 
@@ -336,6 +354,7 @@ class Driver(api.Driver):
     super(Driver, self).__init__(*args, **kw)
     self.features.secnote = 1
     self.features.secpass = 1
+    self.features.sync    = 1
     self.params += (
       aadict(
         label=_('Server URL'), name='url', type='str',
@@ -343,12 +362,11 @@ class Driver(api.Driver):
         help=_('The remote server URL that stores this vault\'s data (must'
                ' support the SPBP protocol version 1.0 or better)')),
       aadict(label=_('Username'), name='username', type='str'),
-      aadict(label=_('Password (PGP-encrypted)'), name='password', type='pgp(str)'),
+      aadict(label=_('Password'), name='password', type='pgp(str)'),
       aadict(label=_('Public key'), name='publickey', type='str'),
-      aadict(label=_('Private key (PGP-encrypted)'), name='privatekey', type='pgp(str)'),
-      aadict(label=_('Nonce tracker'), name='nonce', type='path', default=None),
-      ## todo: ensure that these defaults are evaluated within a ConfigParser context...
-      aadict(label=_('Peer database'), name='peerdb', type='path', default='%(__name__)s.peers.db'),
+      aadict(label=_('Private key'), name='privatekey', type='pgp(str)'),
+      aadict(label=_('Nonce tracker'), name='nonce', type='path', default=DEFAULT_NONCE),
+      aadict(label=_('Peer database'), name='peerdb', type='path', default=DEFAULT_PEERDB),
     )
 
   #----------------------------------------------------------------------------

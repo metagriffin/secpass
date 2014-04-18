@@ -187,6 +187,8 @@ class Store(object):
 #------------------------------------------------------------------------------
 class ProxyStore(Store):
 
+  # TODO: this class is ridiculous -- remove the need for it.
+
   #----------------------------------------------------------------------------
   def __init__(self, proxy=None, *args, **kw):
     super(ProxyStore, self).__init__(*args, **kw)
@@ -199,6 +201,7 @@ class ProxyStore(Store):
   def modify(self, *args, **kw):    return self.proxy.modify(*args, **kw)
   def delete(self, *args, **kw):    return self.proxy.delete(*args, **kw)
   def find(self, *args, **kw):      return self.proxy.find(*args, **kw)
+  def sync(self, *args, **kw):      return self.proxy.sync(*args, **kw)
 
   #----------------------------------------------------------------------------
   def note_set(self, *args, **kw):    return self.proxy.note_set(*args, **kw)
@@ -208,6 +211,27 @@ class ProxyStore(Store):
 
 #------------------------------------------------------------------------------
 class Driver(object):
+  '''
+  Drivers can declare support for a set of 'features'. Versioned features
+  are expected to point to an integer that indicates support level. The
+  following are "known" features, but custom features not listed here are
+  also supported:
+
+  * ``secpass`` : versioned, current level: 1
+
+    Indicates support for the secure password management API.
+
+  * ``secnote`` : versioned, current level: 1
+
+    Indicates support for the secure note management API.
+
+  * ``sync`` : versioned, current level: 1
+
+    Indicates that this driver requires an additional synchronization
+    phase. This can be used to synchronize data with remote peers
+    and/or warn the user that additional configuration steps may be
+    necessary.
+  '''
   name     = None
   params   = None
   features = None
